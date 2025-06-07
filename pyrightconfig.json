@@ -1,0 +1,10 @@
+{
+	"venvPath": "../..",
+	"venv": "minecraft-clone",
+	"typeCheckingMode": "standard",
+
+	"ignore": [
+		"../bin",
+		"../lib"
+	]
+}
