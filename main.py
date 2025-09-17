@@ -18,6 +18,7 @@ class VoxelEngine:
         pg.display.set_mode(WIN_RES, flags = pg.OPENGL | pg.DOUBLEBUF) #pyright: ignore
         self.ctx = mgl.create_context()
         self.ctx.gc_mode = 'auto'
+        self.ctx.enable(mgl.DEPTH_TEST)
 
         self.clock  = pg.time.Clock()
         self.delta_time = 0
