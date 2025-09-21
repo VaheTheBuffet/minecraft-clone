@@ -8,6 +8,9 @@ import math
 # resolution
 WIN_RES = glm.vec2(1600, 900)
 
+#RAY_CASTER
+MAX_RAY_DISTANCE = 5
+
 #chunk
 CHUNK_SIZE = 32
 H_CHUNK_SIZE = CHUNK_SIZE // 2

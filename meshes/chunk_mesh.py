@@ -12,9 +12,9 @@ class ChunkMesh(BaseMesh):
         self.chunk = chunk
         self.program = self.app.shader_program.chunk
         self.ctx = self.app.ctx
-        self.vbo_format = '3u1 1u1 1u1 1u1'
+        self.vbo_format = '1u4'
         self.format_size = 6
-        self.attrs = ('in_position', 'voxel_id', 'face_id', 'ao_id')
+        self.attrs = ('compressed_data',)
 
         self.vao = self.get_vao()
 

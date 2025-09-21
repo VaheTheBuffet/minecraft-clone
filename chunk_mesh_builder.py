@@ -1,10 +1,16 @@
 from settings import *
-from numba import uint8
+from numba import uint8, uint32
 from numba import njit #pyright: ignore
 
 @njit
-def to_uint8(x:int, y:int, z:int, voxel_id:int, face_id:int, ao_id:int):
-    return uint8(x), uint8(y), uint8(z), uint8(voxel_id), uint8(face_id), uint8(ao_id)
+def compress_data(x:int, y:int, z:int, voxel_id:int, uv_index:int, ao_id:int):
+    compressed_data = x
+    compressed_data = (compressed_data << 6) | y
+    compressed_data = (compressed_data << 6) | z
+    compressed_data = (compressed_data << 8) | voxel_id
+    compressed_data = (compressed_data << 2) | uv_index
+    compressed_data = (compressed_data << 2) | ao_id
+    return uint32(compressed_data)
 
 
 @njit
@@ -13,34 +19,34 @@ def get_ao(local_position:tuple, world_position, world_voxels:np.ndarray, normal
     wx, wy, wz = world_position
 
     if normal == 'Y':
-        a = is_void((x-1, y  , z+1), (wx-1, wy  , wz+1), world_voxels)
-        b = is_void((x  , y  , z+1), (wx  , wy  , wz+1), world_voxels)
-        c = is_void((x+1, y  , z+1), (wx+1, wy  , wz+1), world_voxels)
-        d = is_void((x+1, y  , z  ), (wx+1, wy  , wz  ), world_voxels)
-        e = is_void((x+1, y  , z-1), (wx+1, wy  , wz-1), world_voxels)
-        f = is_void((x  , y  , z-1), (wx  , wy  , wz-1), world_voxels)
-        g = is_void((x-1, y  , z-1), (wx-1, wy  , wz-1), world_voxels)
-        h = is_void((x-1, y  , z  ), (wx-1, wy  , wz  ), world_voxels)
+        a = is_empty((x-1, y  , z+1), (wx-1, wy  , wz+1), world_voxels)
+        b = is_empty((x  , y  , z+1), (wx  , wy  , wz+1), world_voxels)
+        c = is_empty((x+1, y  , z+1), (wx+1, wy  , wz+1), world_voxels)
+        d = is_empty((x+1, y  , z  ), (wx+1, wy  , wz  ), world_voxels)
+        e = is_empty((x+1, y  , z-1), (wx+1, wy  , wz-1), world_voxels)
+        f = is_empty((x  , y  , z-1), (wx  , wy  , wz-1), world_voxels)
+        g = is_empty((x-1, y  , z-1), (wx-1, wy  , wz-1), world_voxels)
+        h = is_empty((x-1, y  , z  ), (wx-1, wy  , wz  ), world_voxels)
 
     elif normal == 'X':
-        a = is_void((x  , y-1, z-1), (wx  , wy-1, wz-1), world_voxels)
-        b = is_void((x  , y-1, z  ), (wx  , wy-1, wz  ), world_voxels)
-        c = is_void((x  , y-1, z+1), (wx  , wy-1, wz+1), world_voxels)
-        d = is_void((x  , y  , z+1), (wx  , wy  , wz+1), world_voxels)
-        e = is_void((x  , y+1, z-1), (wx  , wy+1, wz-1), world_voxels)
-        f = is_void((x  , y+1, z  ), (wx  , wy+1, wz  ), world_voxels)
-        g = is_void((x  , y+1, z+1), (wx  , wy+1, wz+1), world_voxels)
-        h = is_void((x  , y  , z+1), (wx  , wy  , wz+1), world_voxels)
+        a = is_empty((x  , y-1, z+1), (wx  , wy-1, wz+1), world_voxels)
+        b = is_empty((x  , y-1, z  ), (wx  , wy-1, wz  ), world_voxels)
+        c = is_empty((x  , y-1, z-1), (wx  , wy-1, wz-1), world_voxels)
+        d = is_empty((x  , y  , z-1), (wx  , wy  , wz-1), world_voxels)
+        e = is_empty((x  , y+1, z-1), (wx  , wy+1, wz-1), world_voxels)
+        f = is_empty((x  , y+1, z  ), (wx  , wy+1, wz  ), world_voxels)
+        g = is_empty((x  , y+1, z+1), (wx  , wy+1, wz+1), world_voxels)
+        h = is_empty((x  , y  , z+1), (wx  , wy  , wz+1), world_voxels)
 
     else:
-        a = is_void((x-1, y-1, z  ), (wx-1, wy-1, wz  ), world_voxels)
-        b = is_void((x  , y-1, z  ), (wx  , wy-1, wz  ), world_voxels)
-        c = is_void((x+1, y-1, z  ), (wx+1, wy-1, wz  ), world_voxels)
-        d = is_void((x+1, y  , z  ), (wx+1, wy  , wz  ), world_voxels)
-        e = is_void((x+1, y+1, z  ), (wx+1, wy+1, wz  ), world_voxels)
-        f = is_void((x  , y+1, z  ), (wx  , wy+1, wz  ), world_voxels)
-        g = is_void((x-1, y+1, z  ), (wx-1, wy+1, wz  ), world_voxels)
-        h = is_void((x-1, y  , z  ), (wx-1, wy  , wz  ), world_voxels)
+        a = is_empty((x-1, y-1, z  ), (wx-1, wy-1, wz  ), world_voxels)
+        b = is_empty((x  , y-1, z  ), (wx  , wy-1, wz  ), world_voxels)
+        c = is_empty((x+1, y-1, z  ), (wx+1, wy-1, wz  ), world_voxels)
+        d = is_empty((x+1, y  , z  ), (wx+1, wy  , wz  ), world_voxels)
+        e = is_empty((x+1, y+1, z  ), (wx+1, wy+1, wz  ), world_voxels)
+        f = is_empty((x  , y+1, z  ), (wx  , wy+1, wz  ), world_voxels)
+        g = is_empty((x-1, y+1, z  ), (wx-1, wy+1, wz  ), world_voxels)
+        h = is_empty((x-1, y  , z  ), (wx-1, wy  , wz  ), world_voxels)
 
     return (a+b+h, b+c+d, d+e+f, f+g+h)
 
@@ -60,7 +66,7 @@ def get_chunk_index(world_position:tuple)->int:
 
 
 @njit
-def is_void(local_position:tuple, world_position:tuple, world_voxels:np.ndarray)->bool:
+def is_empty(local_position:tuple, world_position:tuple, world_voxels:np.ndarray)->bool:
 
     chunk_index = get_chunk_index(world_position)
     if chunk_index == -1:
@@ -78,15 +84,14 @@ def is_void(local_position:tuple, world_position:tuple, world_voxels:np.ndarray)
 def add_data(vertex_data:np.ndarray, index:int, *vertices:tuple)->int:
     """Adds data to vertex_data array and increments index"""
     for vertex in vertices:
-        for attr in vertex:
-            vertex_data[index] = attr
-            index += 1
+        vertex_data[index] = vertex
+        index += 1
     return index
 
 
 @njit
-def build_chunk_mesh(chunk_voxels:np.ndarray, format_size:int, chunk_position:tuple, world_voxels:np.ndarray) -> np.ndarray:
-    vertex_data = np.empty(CHUNK_VOL * 18 * format_size, dtype='uint8')
+def build_chunk_mesh(chunk_voxels:np.ndarray, format_size:int, chunk_position:tuple, world_voxels:np.ndarray)->np.ndarray:
+    vertex_data = np.empty(CHUNK_VOL * 18, dtype='uint32')
     cx, cy, cz = chunk_position
     index = 0
 
@@ -103,59 +108,77 @@ def build_chunk_mesh(chunk_voxels:np.ndarray, format_size:int, chunk_position:tu
                 wy = cy * CHUNK_SIZE + y
                 wz = cz * CHUNK_SIZE + z
 
-                if is_void((x, y+1, z), (wx, wy+1, wz), world_voxels):
+                if is_empty((x, y+1, z), (wx, wy+1, wz), world_voxels):
                     ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'Y')
-                    v0 = to_uint8(x  , y+1, z+1, voxel_id, 0, ao_values[0])
-                    v1 = to_uint8(x+1, y+1, z+1, voxel_id, 0, ao_values[1])
-                    v2 = to_uint8(x+1, y+1, z  , voxel_id, 0, ao_values[2])
-                    v3 = to_uint8(x  , y+1, z  , voxel_id, 0, ao_values[3])
+                    v0 = compress_data(x  , y+1, z+1, voxel_id, 0, ao_values[0])
+                    v1 = compress_data(x+1, y+1, z+1, voxel_id, 1, ao_values[1])
+                    v2 = compress_data(x+1, y+1, z  , voxel_id, 2, ao_values[2])
+                    v3 = compress_data(x  , y+1, z  , voxel_id, 3, ao_values[3])
 
-                    index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+                    if(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3]):
+                        index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+                    else:
+                        index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
 
-                if is_void((x, y-1, z), (wx, wy-1, wz), world_voxels):
+                if is_empty((x, y-1, z), (wx, wy-1, wz), world_voxels):
                     ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'Y')
-                    v0 = to_uint8(x  , y  , z  , voxel_id, 1, ao_values[0])
-                    v1 = to_uint8(x+1, y  , z  , voxel_id, 1, ao_values[1])
-                    v2 = to_uint8(x+1, y  , z+1, voxel_id, 1, ao_values[2])
-                    v3 = to_uint8(x  , y  , z+1, voxel_id, 1, ao_values[3])
+                    v0 = compress_data(x  , y  , z  , voxel_id, 0, ao_values[1])
+                    v1 = compress_data(x+1, y  , z  , voxel_id, 1, ao_values[0])
+                    v2 = compress_data(x+1, y  , z+1, voxel_id, 2, ao_values[3])
+                    v3 = compress_data(x  , y  , z+1, voxel_id, 3, ao_values[2])
 
-                    index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+                    if(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3]):
+                        index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+                    else:
+                        index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
                     
-                if is_void((x+1, y, z), (wx+1, wy, wz), world_voxels):
+                if is_empty((x+1, y, z), (wx+1, wy, wz), world_voxels):
                     ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'X')
-                    v0 = to_uint8(x+1, y  , z+1, voxel_id, 2, ao_values[0])
-                    v1 = to_uint8(x+1, y  , z  , voxel_id, 2, ao_values[1])
-                    v2 = to_uint8(x+1, y+1, z  , voxel_id, 2, ao_values[2])
-                    v3 = to_uint8(x+1, y+1, z+1, voxel_id, 2, ao_values[3])
+                    v0 = compress_data(x+1, y  , z+1, voxel_id, 0, ao_values[0])
+                    v1 = compress_data(x+1, y  , z  , voxel_id, 1, ao_values[1])
+                    v2 = compress_data(x+1, y+1, z  , voxel_id, 2, ao_values[2])
+                    v3 = compress_data(x+1, y+1, z+1, voxel_id, 3, ao_values[3])
 
-                    index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+                    if(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3]):
+                        index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+                    else:
+                        index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
 
-                if is_void((x-1, y, z), (wx-1, wy, wz), world_voxels):
+                if is_empty((x-1, y, z), (wx-1, wy, wz), world_voxels):
                     ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'X')
-                    v0 = to_uint8(x  , y  , z  , voxel_id, 3, ao_values[0])
-                    v1 = to_uint8(x  , y  , z+1, voxel_id, 3, ao_values[1])
-                    v2 = to_uint8(x  , y+1, z+1, voxel_id, 3, ao_values[2])
-                    v3 = to_uint8(x  , y+1, z  , voxel_id, 3, ao_values[3])
+                    v0 = compress_data(x  , y  , z  , voxel_id, 0, ao_values[1])
+                    v1 = compress_data(x  , y  , z+1, voxel_id, 1, ao_values[0])
+                    v2 = compress_data(x  , y+1, z+1, voxel_id, 2, ao_values[3])
+                    v3 = compress_data(x  , y+1, z  , voxel_id, 3, ao_values[2])
 
-                    index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+                    if(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3]):
+                        index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+                    else:
+                        index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
                     
-                if is_void((x, y, z+1), (wx, wy, wz+1), world_voxels):
+                if is_empty((x, y, z+1), (wx, wy, wz+1), world_voxels):
                     ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'Z')
-                    v0 = to_uint8(x  , y  , z+1, voxel_id, 4, ao_values[0])
-                    v1 = to_uint8(x+1, y  , z+1, voxel_id, 4, ao_values[1])
-                    v2 = to_uint8(x+1, y+1, z+1, voxel_id, 4, ao_values[2])
-                    v3 = to_uint8(x  , y+1, z+1, voxel_id, 4, ao_values[3])
+                    v0 = compress_data(x  , y  , z+1, voxel_id, 0, ao_values[0])
+                    v1 = compress_data(x+1, y  , z+1, voxel_id, 1, ao_values[1])
+                    v2 = compress_data(x+1, y+1, z+1, voxel_id, 2, ao_values[2])
+                    v3 = compress_data(x  , y+1, z+1, voxel_id, 3, ao_values[3])
 
-                    index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+                    if(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3]):
+                        index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+                    else:
+                        index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
 
-                if is_void((x, y, z-1), (wx, wy, wz-1), world_voxels):
+                if is_empty((x, y, z-1), (wx, wy, wz-1), world_voxels):
                     ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'Z')
-                    v0 = to_uint8(x+1, y  , z  , voxel_id, 5, ao_values[0])
-                    v1 = to_uint8(x  , y  , z  , voxel_id, 5, ao_values[1])
-                    v2 = to_uint8(x  , y+1, z  , voxel_id, 5, ao_values[2])
-                    v3 = to_uint8(x+1, y+1, z  , voxel_id, 5, ao_values[3])
+                    v0 = compress_data(x+1, y  , z  , voxel_id, 0, ao_values[1])
+                    v1 = compress_data(x  , y  , z  , voxel_id, 1, ao_values[0])
+                    v2 = compress_data(x  , y+1, z  , voxel_id, 2, ao_values[3])
+                    v3 = compress_data(x+1, y+1, z  , voxel_id, 3, ao_values[2])
 
-                    index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+                    if(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3]):
+                        index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
+                    else:
+                        index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
 
     print(f'index is {index}')
     return vertex_data[:index+1]
