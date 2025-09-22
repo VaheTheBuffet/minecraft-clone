@@ -1,5 +1,6 @@
 from settings import *
 from world_objects.chunk import Chunk
+from ray_caster import RayCaster
 
 class World:
 
@@ -7,6 +8,7 @@ class World:
         self.app = app
         self.chunks = np.empty([WORLD_VOL], dtype = 'object')
         self.voxels = np.empty([WORLD_VOL, CHUNK_VOL], dtype = 'uint8')
+        self.ray_caster = RayCaster(self)
 
         self.build_chunks()
         self.build_chunk_mesh()
@@ -29,7 +31,7 @@ class World:
 
 
     def update(self):
-        pass
+        self.ray_caster.update()
 
 
     def render(self):

@@ -13,6 +13,15 @@ class Player(Camera):
         self.mouse_control()
         super().update()
 
+    def handle_events(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN:
+            ray_caster = self.app.scene.world.ray_caster
+            if event.button == 1: #left click
+                ray_caster.remove_voxel()
+            if event.button == 3: #right click
+                ray_caster.place_voxel(voxel_id = ray_caster.voxel_id)
+
+
     def mouse_control(self):
         mouse_dx, mouse_dy = pg.mouse.get_rel()
         if mouse_dx:

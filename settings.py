@@ -9,7 +9,7 @@ import math
 WIN_RES = glm.vec2(1600, 900)
 
 #RAY_CASTER
-MAX_RAY_DISTANCE = 5
+MAX_RAY_DISTANCE = 8
 
 #chunk
 CHUNK_SIZE = 32

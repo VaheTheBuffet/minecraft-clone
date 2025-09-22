@@ -18,6 +18,10 @@ class Chunk:
         )
 
 
+    def rebuild_mesh(self):
+        self.mesh.get_vao()
+
+
     def build_mesh(self):
         self.mesh = ChunkMesh(self)
 

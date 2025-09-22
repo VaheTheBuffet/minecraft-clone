@@ -3,7 +3,7 @@ from numba import uint8, uint32
 from numba import njit #pyright: ignore
 
 @njit
-def compress_data(x:int, y:int, z:int, voxel_id:int, uv_index:int, ao_id:int):
+def compress_data(x:int, y:int, z:int, voxel_id:int, uv_index:int, ao_id:int)->uint32: #pyright: ignore because this is not a class
     compressed_data = x
     compressed_data = (compressed_data << 6) | y
     compressed_data = (compressed_data << 6) | z
