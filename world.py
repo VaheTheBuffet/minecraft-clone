@@ -8,7 +8,8 @@ class World:
         self.app = app
         self.chunks = np.empty([WORLD_VOL], dtype = 'object')
         self.voxels = np.empty([WORLD_VOL, CHUNK_VOL], dtype = 'uint8')
-        self.ray_caster = RayCaster(self)
+        self.app.ray_caster = RayCaster(self)
+        self.ray_caster = self.app.ray_caster
 
         self.build_chunks()
         self.build_chunk_mesh()

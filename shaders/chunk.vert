@@ -55,6 +55,6 @@ void main() {
 	unpack(compressed_data);
 	uv = uv_coords[uv_index];
 	ao_value = ao_values[ao_id];
-	voxel_color = vec3(1, 1, 1);//color_generator(voxel_id);
+	voxel_color = color_generator(voxel_id);
 	gl_Position = m_proj * m_view * m_model * vec4(x, y, z, 1.0);
 }

@@ -30,11 +30,13 @@ class VoxelEngine:
         pg.event.set_grab(True)
         pg.mouse.set_visible(False)
 
+
     def on_init(self):
         self.player = Player(self)
         self.shader_program = ShaderProgram(self)
         self.scene = Scene(self)
         
+
     def update(self): 
         self.shader_program.update()
         self.scene.update()
@@ -44,16 +46,27 @@ class VoxelEngine:
         self.time = pg.time.get_ticks() * 0.001
         pg.display.set_caption(f'{self.clock.get_fps() :.0f}')
 
+
     def render(self):
         self.ctx.clear(color=BG_COLOR) #pyright: ignore
         self.scene.render()
         pg.display.flip()
+
 
     def handle_events(self):
         for event in pg.event.get():
             if event.type == pg.QUIT or (event.type == pg.KEYDOWN and event.key == pg.K_ESCAPE):
                 self.is_running = False
             self.player.handle_events(event)
+
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE:
+                self.log_data()
+
+
+    def log_data(self):
+        self.scene.log_data()
+        self.player.log_data()
+
 
     def run(self):
         while self.is_running:

@@ -8,6 +8,7 @@ class ShaderProgram:
         self.ctx = app.ctx
         self.player = app.player
         self.chunk = self.get_program(shader_name='chunk')
+        self.voxel_marker = self.get_program(shader_name='cube')
 
         self.texture_0 = self.load_texture('frame.png')
         self.texture_0.use(location = 0)
@@ -16,6 +17,9 @@ class ShaderProgram:
 
 
     def set_uniforms_on_init(self):
+        self.voxel_marker['m_proj'].write(self.player.m_proj)
+        self.voxel_marker['texture_0'] = 0
+
         self.chunk['m_proj'].write(self.player.m_proj)
         self.chunk['m_model'].write(glm.mat4())
         self.chunk['texture_0'] = 0
@@ -23,6 +27,7 @@ class ShaderProgram:
 
     def update(self):
         self.chunk['m_view'].write(self.player.m_view)
+        self.voxel_marker['m_view'].write(self.player.m_view)
 
 
     def load_texture(self, filename:str):

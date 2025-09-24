@@ -8,10 +8,12 @@ class Player(Camera):
         self.app = app
         super().__init__(position, yaw, pitch)
 
+
     def update(self):
         self.keyboard_control()
         self.mouse_control()
         super().update()
+
 
     def handle_events(self, event):
         if event.type == pg.MOUSEBUTTONDOWN:
@@ -22,12 +24,17 @@ class Player(Camera):
                 ray_caster.place_voxel(voxel_id = ray_caster.voxel_id)
 
 
+    def log_data(self):
+        print(f'player position {self.position}')
+
+
     def mouse_control(self):
         mouse_dx, mouse_dy = pg.mouse.get_rel()
         if mouse_dx:
             self.rotate_yaw(delta_x=mouse_dx*MOUSE_SENSITIVITY)
         if mouse_dy:
             self.rotate_pitch(delta_y=mouse_dy*MOUSE_SENSITIVITY)
+
 
     def keyboard_control(self):
         key_state = pg.key.get_pressed()
