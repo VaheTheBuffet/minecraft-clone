@@ -13,7 +13,7 @@ class ChunkMesh(BaseMesh):
         self.program = self.app.shader_program.chunk
         self.ctx = self.app.ctx
         self.vbo_format = '1u4'
-        self.format_size = 6
+        self.format_size = 1
         self.attrs = ('compressed_data',)
 
         self.get_vao()
@@ -22,4 +22,3 @@ class ChunkMesh(BaseMesh):
     def get_vertex_data(self) -> np.ndarray:
         return build_chunk_mesh(self.chunk.voxels, self.format_size,
                                 self.chunk.position, self.chunk.world.voxels)
-

@@ -1,10 +1,10 @@
 #version 330 core
 
-in vec3 voxel_color;
 in vec2 uv;
 in float ao_value;
+flat in int texture_index;
 
-uniform sampler2D texture_0;
+uniform sampler2DArray texture_array_0;
 
 const vec3 gamma = vec3(2.2);
 const vec3 inv_gamma = 1/gamma;
@@ -12,7 +12,14 @@ const vec3 inv_gamma = 1/gamma;
 out vec4 fragColor;
 
 void main() {
-	vec3 tex_color = texture(texture_0, uv).rgb;
-	tex_color.rgb *= pow(voxel_color * ao_value, inv_gamma);
+	vec2 face_uv = uv;
+	face_uv.x += texture_index;
+	face_uv.x /= 3;
+
+	vec3 tex_color = texture(texture_array_0, vec3(face_uv, 5)).rgb;
+
+	pow(tex_color, gamma);
+	tex_color.rgb *= ao_value;
+	pow(tex_color, inv_gamma);
 	fragColor = vec4(tex_color, 1);
 }

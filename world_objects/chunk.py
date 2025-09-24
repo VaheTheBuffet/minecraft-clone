@@ -3,7 +3,7 @@ from meshes.chunk_mesh import ChunkMesh
 import glm
 
 class Chunk:
-    __slots__ = ['voxels', 'mesh', 'app', 'position', 'is_empty', 'world']
+    __slots__ = ['voxels', 'mesh', 'app', 'position', 'is_empty', 'world', 'center']
 
     def __init__(self, world, *position):
         self.position = position
@@ -11,7 +11,9 @@ class Chunk:
         self.app = world.app
         self.is_empty = True
 
+        self.center = (glm.vec3(position) + 0.5) * CHUNK_SIZE
 
+    
     def set_uniforms(self):
         self.mesh.program['m_model'].write(
             glm.translate(glm.mat4(), glm.vec3(self.position) * CHUNK_SIZE) #pyright: ignore
@@ -26,8 +28,12 @@ class Chunk:
         self.mesh = ChunkMesh(self)
 
 
+    def is_in_view(self):
+        return self.app.player.frustum.is_on_frustum(self)
+
+
     def render(self):
-        if not self.is_empty:
+        if not self.is_empty and self.is_in_view():
             self.set_uniforms()
             self.mesh.render()
 

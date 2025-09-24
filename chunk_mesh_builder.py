@@ -3,13 +3,14 @@ from numba import uint8, uint32
 from numba import njit #pyright: ignore
 
 @njit
-def compress_data(x:int, y:int, z:int, voxel_id:int, uv_index:int, ao_id:int)->uint32: #pyright: ignore because this is not a class
+def compress_data(x:int, y:int, z:int, voxel_id:int, face_id:int, ao_id:int, orientation:int)->uint32: #pyright: ignore because this is not a class
     compressed_data = x
     compressed_data = (compressed_data << 6) | y
     compressed_data = (compressed_data << 6) | z
     compressed_data = (compressed_data << 8) | voxel_id
-    compressed_data = (compressed_data << 2) | uv_index
+    compressed_data = (compressed_data << 3) | face_id
     compressed_data = (compressed_data << 2) | ao_id
+    compressed_data = (compressed_data << 1) | orientation
     return uint32(compressed_data)
 
 
@@ -110,72 +111,78 @@ def build_chunk_mesh(chunk_voxels:np.ndarray, format_size:int, chunk_position:tu
 
                 if is_empty((x, y+1, z), (wx, wy+1, wz), world_voxels):
                     ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'Y')
-                    v0 = compress_data(x  , y+1, z+1, voxel_id, 0, ao_values[0])
-                    v1 = compress_data(x+1, y+1, z+1, voxel_id, 1, ao_values[1])
-                    v2 = compress_data(x+1, y+1, z  , voxel_id, 2, ao_values[2])
-                    v3 = compress_data(x  , y+1, z  , voxel_id, 3, ao_values[3])
+                    orientation = int(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3])
+                    v0 = compress_data(x  , y+1, z+1, voxel_id, 0, ao_values[0], orientation)
+                    v1 = compress_data(x+1, y+1, z+1, voxel_id, 0, ao_values[1], orientation)
+                    v2 = compress_data(x+1, y+1, z  , voxel_id, 0, ao_values[2], orientation)
+                    v3 = compress_data(x  , y+1, z  , voxel_id, 0, ao_values[3], orientation)
 
-                    if(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3]):
+                    if(orientation):
                         index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
                     else:
                         index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
 
                 if is_empty((x, y-1, z), (wx, wy-1, wz), world_voxels):
                     ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'Y')
-                    v0 = compress_data(x  , y  , z  , voxel_id, 0, ao_values[1])
-                    v1 = compress_data(x+1, y  , z  , voxel_id, 1, ao_values[0])
-                    v2 = compress_data(x+1, y  , z+1, voxel_id, 2, ao_values[3])
-                    v3 = compress_data(x  , y  , z+1, voxel_id, 3, ao_values[2])
+                    orientation = int(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3])
+                    v0 = compress_data(x  , y  , z  , voxel_id, 1, ao_values[1], orientation)
+                    v1 = compress_data(x+1, y  , z  , voxel_id, 1, ao_values[0], orientation)
+                    v2 = compress_data(x+1, y  , z+1, voxel_id, 1, ao_values[3], orientation)
+                    v3 = compress_data(x  , y  , z+1, voxel_id, 1, ao_values[2], orientation)
 
-                    if(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3]):
+                    if(orientation):
                         index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
                     else:
                         index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
                     
                 if is_empty((x+1, y, z), (wx+1, wy, wz), world_voxels):
                     ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'X')
-                    v0 = compress_data(x+1, y  , z+1, voxel_id, 0, ao_values[0])
-                    v1 = compress_data(x+1, y  , z  , voxel_id, 1, ao_values[1])
-                    v2 = compress_data(x+1, y+1, z  , voxel_id, 2, ao_values[2])
-                    v3 = compress_data(x+1, y+1, z+1, voxel_id, 3, ao_values[3])
+                    orientation = int(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3])
+                    v0 = compress_data(x+1, y  , z+1, voxel_id, 2, ao_values[0], orientation)
+                    v1 = compress_data(x+1, y  , z  , voxel_id, 2, ao_values[1], orientation)
+                    v2 = compress_data(x+1, y+1, z  , voxel_id, 2, ao_values[2], orientation)
+                    v3 = compress_data(x+1, y+1, z+1, voxel_id, 2, ao_values[3], orientation)
 
-                    if(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3]):
+                    if(orientation):
                         index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
                     else:
                         index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
 
                 if is_empty((x-1, y, z), (wx-1, wy, wz), world_voxels):
                     ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'X')
-                    v0 = compress_data(x  , y  , z  , voxel_id, 0, ao_values[1])
-                    v1 = compress_data(x  , y  , z+1, voxel_id, 1, ao_values[0])
-                    v2 = compress_data(x  , y+1, z+1, voxel_id, 2, ao_values[3])
-                    v3 = compress_data(x  , y+1, z  , voxel_id, 3, ao_values[2])
+                    orientation = int(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3])
+                    v0 = compress_data(x  , y  , z  , voxel_id, 3, ao_values[1], orientation)
+                    v1 = compress_data(x  , y  , z+1, voxel_id, 3, ao_values[0], orientation)
+                    v2 = compress_data(x  , y+1, z+1, voxel_id, 3, ao_values[3], orientation)
+                    v3 = compress_data(x  , y+1, z  , voxel_id, 3, ao_values[2], orientation)
 
-                    if(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3]):
+                    if(orientation):
                         index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
                     else:
                         index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
                     
                 if is_empty((x, y, z+1), (wx, wy, wz+1), world_voxels):
                     ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'Z')
-                    v0 = compress_data(x  , y  , z+1, voxel_id, 0, ao_values[0])
-                    v1 = compress_data(x+1, y  , z+1, voxel_id, 1, ao_values[1])
-                    v2 = compress_data(x+1, y+1, z+1, voxel_id, 2, ao_values[2])
-                    v3 = compress_data(x  , y+1, z+1, voxel_id, 3, ao_values[3])
+                    orientation = int(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3])
+                    v0 = compress_data(x  , y  , z+1, voxel_id, 4, ao_values[0], orientation)
+                    v1 = compress_data(x+1, y  , z+1, voxel_id, 4, ao_values[1], orientation)
+                    v2 = compress_data(x+1, y+1, z+1, voxel_id, 4, ao_values[2], orientation)
+                    v3 = compress_data(x  , y+1, z+1, voxel_id, 4, ao_values[3], orientation)
 
-                    if(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3]):
+                    if(orientation):
                         index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
                     else:
                         index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
 
                 if is_empty((x, y, z-1), (wx, wy, wz-1), world_voxels):
                     ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'Z')
-                    v0 = compress_data(x+1, y  , z  , voxel_id, 0, ao_values[1])
-                    v1 = compress_data(x  , y  , z  , voxel_id, 1, ao_values[0])
-                    v2 = compress_data(x  , y+1, z  , voxel_id, 2, ao_values[3])
-                    v3 = compress_data(x+1, y+1, z  , voxel_id, 3, ao_values[2])
+                    orientation = int(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3])
+                    v0 = compress_data(x+1, y  , z  , voxel_id, 5, ao_values[1], orientation)
+                    v1 = compress_data(x  , y  , z  , voxel_id, 5, ao_values[0], orientation)
+                    v2 = compress_data(x  , y+1, z  , voxel_id, 5, ao_values[3], orientation)
+                    v3 = compress_data(x+1, y+1, z  , voxel_id, 5, ao_values[2], orientation)
 
-                    if(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3]):
+                    if(orientation):
                         index = add_data(vertex_data, index, v0, v1, v2, v0, v2, v3)
                     else:
                         index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
