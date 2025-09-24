@@ -9,6 +9,7 @@ class ShaderProgram:
         self.player = app.player
         self.chunk = self.get_program(shader_name='chunk')
         self.voxel_marker = self.get_program(shader_name='cube')
+        self.crosshair = self.get_program(shader_name = 'crosshair')
 
         self.texture_0 = self.load_texture('frame.png')
         self.texture_0.use(location = 0)

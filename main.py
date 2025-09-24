@@ -20,6 +20,8 @@ class VoxelEngine:
         self.ctx.gc_mode = 'auto'
         self.ctx.enable(mgl.DEPTH_TEST)
 
+        print(self.ctx.viewport)
+
         self.clock  = pg.time.Clock()
         self.delta_time = 0
         self.time = 0

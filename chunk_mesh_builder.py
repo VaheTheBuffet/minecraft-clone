@@ -180,5 +180,4 @@ def build_chunk_mesh(chunk_voxels:np.ndarray, format_size:int, chunk_position:tu
                     else:
                         index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
 
-    print(f'index is {index}')
     return vertex_data[:index+1]
