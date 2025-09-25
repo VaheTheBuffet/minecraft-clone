@@ -16,6 +16,7 @@ int orientation;
 
 
 flat out int texture_index;
+flat out int f_voxel_id;
 out vec2 uv;
 out float ao_value;
 
@@ -32,13 +33,13 @@ const vec2 uv_coords[4] = vec2[4](
 
 
 const int uv_indices[12] = int[12](
-	1, 2, 3, 1, 3, 0,
-	0, 1, 2, 0, 2, 3
+	3, 0, 1, 3, 1, 2,
+	2, 3, 0, 2, 0, 1
 );
 
 
 const int texture_indices[6] = int[6](
-	2, 0, 1, 1, 1, 1
+	0, 2, 1, 1, 1, 1
 );
 
 
@@ -51,7 +52,7 @@ void unpack(uint compressed_data) {
 	//(x, y, z, voxel_id,  face_id, ao_id, orientation)
 	//(6, 6, 6,        8,        3,     2,           1)
 
-	const uint mask_orientation = 1u;   const uint len_orientation = 1u;
+	const uint mask_orientation = 1u;   const uint len_orientation  = 1u;
 	const uint mask_ao_id       = 3u;   const uint len_ao_id        = 2u;
 	const uint mask_face_id     = 7u;   const uint len_face_id      = 3u;
 	const uint mask_voxel_id    = 255u; const uint len_voxel_id     = 8u;
@@ -72,6 +73,7 @@ void main() {
 	
 	texture_index = texture_indices[face_id];
 
+	f_voxel_id = voxel_id;
 	uv = uv_coords[uv_indices[gl_VertexID % 6 + 6 * orientation]];
 	ao_value = ao_values[ao_id];
 	gl_Position = m_proj * m_view * m_model * vec4(x, y, z, 1.0);

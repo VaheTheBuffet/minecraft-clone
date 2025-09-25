@@ -14,7 +14,9 @@ class CrosshairMesh(BaseMesh):
         self.get_vao()
     
     def get_vertex_data(self)->np.ndarray:
-        d = 0.02
+        x = 0.02 / ASPECT_RATIO
+        y = 0.02
         return np.array([
-            -d,0,-0.1,  d,0,-0.1,  d,d,-0.1
+            x,0,-0.1, 0,y,-0.1, -x,0,-0.1,
+            -x,0,-0.1, 0,-y,-0.1, x,0,-0.1
         ], dtype='f')

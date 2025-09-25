@@ -3,6 +3,7 @@
 in vec2 uv;
 in float ao_value;
 flat in int texture_index;
+flat in int f_voxel_id;
 
 uniform sampler2DArray texture_array_0;
 
@@ -16,10 +17,11 @@ void main() {
 	face_uv.x += texture_index;
 	face_uv.x /= 3;
 
-	vec3 tex_color = texture(texture_array_0, vec3(face_uv, 5)).rgb;
+	vec3 tex_color = texture(texture_array_0, vec3(face_uv, f_voxel_id)).rgb;
 
 	pow(tex_color, gamma);
 	tex_color.rgb *= ao_value;
 	pow(tex_color, inv_gamma);
+
 	fragColor = vec4(tex_color, 1);
 }

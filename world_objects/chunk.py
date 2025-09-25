@@ -1,6 +1,7 @@
 from settings import *
 from meshes.chunk_mesh import ChunkMesh
 import glm
+from terrain_generation import *
 
 class Chunk:
     __slots__ = ['voxels', 'mesh', 'app', 'position', 'is_empty', 'world', 'center']
@@ -42,19 +43,23 @@ class Chunk:
         voxels = np.zeros(CHUNK_VOL, dtype = 'uint8')
 
         cx, cy, cz = glm.ivec3(self.position) * CHUNK_SIZE
+        self.generate_terrain(voxels, cx, cy, cz)
+        self.is_empty = not np.any(voxels)
 
+        return voxels
+
+
+    @staticmethod
+    @njit
+    def generate_terrain(voxels, cx, cy, cz):
         for x in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
                 wx = x + cx
                 wz = z + cz
 
-                global_height = int(glm.simplex(glm.vec2(wx, wz) * 0.01) * 32 + 32)
+                global_height = get_height(wx, wz)
                 local_height = min(global_height - cy, CHUNK_SIZE)
 
                 for y in range(local_height):
                     wy = y + cy
-                    voxels[x + z * CHUNK_SIZE + y * CHUNK_AREA] = wy + 1
-
-                self.is_empty = not np.any(voxels)
-
-        return voxels
+                    set_voxel_id(voxels, x, y, z, wx, wy, wz, global_height)

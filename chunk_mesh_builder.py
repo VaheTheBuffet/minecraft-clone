@@ -123,7 +123,7 @@ def build_chunk_mesh(chunk_voxels:np.ndarray, format_size:int, chunk_position:tu
                         index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
 
                 if is_empty((x, y-1, z), (wx, wy-1, wz), world_voxels):
-                    ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'Y')
+                    ao_values = get_ao((x, y-1, z), (wx, wy-1, wz), world_voxels, 'Y')
                     orientation = int(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3])
                     v0 = compress_data(x  , y  , z  , voxel_id, 1, ao_values[1], orientation)
                     v1 = compress_data(x+1, y  , z  , voxel_id, 1, ao_values[0], orientation)
@@ -136,7 +136,7 @@ def build_chunk_mesh(chunk_voxels:np.ndarray, format_size:int, chunk_position:tu
                         index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
                     
                 if is_empty((x+1, y, z), (wx+1, wy, wz), world_voxels):
-                    ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'X')
+                    ao_values = get_ao((x+1, y, z), (wx+1, wy, wz), world_voxels, 'X')
                     orientation = int(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3])
                     v0 = compress_data(x+1, y  , z+1, voxel_id, 2, ao_values[0], orientation)
                     v1 = compress_data(x+1, y  , z  , voxel_id, 2, ao_values[1], orientation)
@@ -149,7 +149,7 @@ def build_chunk_mesh(chunk_voxels:np.ndarray, format_size:int, chunk_position:tu
                         index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
 
                 if is_empty((x-1, y, z), (wx-1, wy, wz), world_voxels):
-                    ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'X')
+                    ao_values = get_ao((x-1, y, z), (wx-1, wy, wz), world_voxels, 'X')
                     orientation = int(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3])
                     v0 = compress_data(x  , y  , z  , voxel_id, 3, ao_values[1], orientation)
                     v1 = compress_data(x  , y  , z+1, voxel_id, 3, ao_values[0], orientation)
@@ -162,7 +162,7 @@ def build_chunk_mesh(chunk_voxels:np.ndarray, format_size:int, chunk_position:tu
                         index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
                     
                 if is_empty((x, y, z+1), (wx, wy, wz+1), world_voxels):
-                    ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'Z')
+                    ao_values = get_ao((x, y, z+1), (wx, wy, wz+1), world_voxels, 'Z')
                     orientation = int(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3])
                     v0 = compress_data(x  , y  , z+1, voxel_id, 4, ao_values[0], orientation)
                     v1 = compress_data(x+1, y  , z+1, voxel_id, 4, ao_values[1], orientation)
@@ -175,7 +175,7 @@ def build_chunk_mesh(chunk_voxels:np.ndarray, format_size:int, chunk_position:tu
                         index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
 
                 if is_empty((x, y, z-1), (wx, wy, wz-1), world_voxels):
-                    ao_values = get_ao((x, y+1, z), (wx, wy+1, wz), world_voxels, 'Z')
+                    ao_values = get_ao((x, y, z-1), (wx, wy, wz-1), world_voxels, 'Z')
                     orientation = int(ao_values[0] + ao_values[2] > ao_values[1] + ao_values[3])
                     v0 = compress_data(x+1, y  , z  , voxel_id, 5, ao_values[1], orientation)
                     v1 = compress_data(x  , y  , z  , voxel_id, 5, ao_values[0], orientation)

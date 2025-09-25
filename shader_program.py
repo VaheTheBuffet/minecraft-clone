@@ -37,7 +37,7 @@ class ShaderProgram:
 
     def load_texture(self, filename:str, is_array:bool):
         pg_texture = pg.image.load('assets/%s' % filename)
-        pg_texture = pg.transform.flip(pg_texture, flip_x=False, flip_y=True)
+        pg_texture = pg.transform.flip(pg_texture, flip_x=True, flip_y=False)
 
         if is_array:
             n_layers = 3 * pg_texture.get_height() // pg_texture.get_width()

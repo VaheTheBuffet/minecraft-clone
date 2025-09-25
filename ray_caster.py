@@ -48,7 +48,7 @@ class RayCaster:
         if y == 0 and cy > 0:
             neighbor_chunk = self.world.chunks[cx + WORLD_W * cz + WORLD_AREA * (cy-1)]
             neighbor_chunk.rebuild_mesh()
-        elif y == CHUNK_SIZE-1 and cy < WORLD_W-1:
+        elif y == CHUNK_SIZE-1 and cy < WORLD_H-1:
             neighbor_chunk = self.world.chunks[cx + WORLD_W * cz + WORLD_AREA * (cy+1)]
             neighbor_chunk.rebuild_mesh()
         
