@@ -17,6 +17,8 @@ class ShaderProgram:
         self.texture_array_0 = self.load_texture('tex_array_0.png', True)
         self.texture_array_0.use(location = 1)
 
+        self.clouds = self.get_program(shader_name='clouds')
+
 
         self.set_uniforms_on_init()
 
@@ -30,10 +32,13 @@ class ShaderProgram:
         self.chunk['texture_array_0'] = 1
         self.chunk['bg_color'].write(BG_COLOR)
 
+        self.clouds['m_proj'].write(self.player.m_proj)
+
 
     def update(self):
         self.chunk['m_view'].write(self.player.m_view)
         self.voxel_marker['m_view'].write(self.player.m_view)
+        self.clouds['m_view'].write(self.player.m_view)
 
 
     def load_texture(self, filename:str, is_array:bool):
