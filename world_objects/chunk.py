@@ -40,7 +40,7 @@ class Chunk:
 
 
     def build_voxels(self) -> np.ndarray:
-        voxels = np.zeros(CHUNK_VOL, dtype = 'uint8')
+        voxels = np.zeros((CHUNK_VOL), dtype = 'uint8')
 
         cx, cy, cz = glm.ivec3(self.position) * CHUNK_SIZE
         self.generate_terrain(voxels, cx, cy, cz)

@@ -28,6 +28,7 @@ class ShaderProgram:
         self.chunk['m_proj'].write(self.player.m_proj)
         self.chunk['m_model'].write(glm.mat4())
         self.chunk['texture_array_0'] = 1
+        self.chunk['bg_color'].write(BG_COLOR)
 
 
     def update(self):

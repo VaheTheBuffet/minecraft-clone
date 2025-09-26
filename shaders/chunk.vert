@@ -18,7 +18,7 @@ int orientation;
 flat out int texture_index;
 flat out int f_voxel_id;
 out vec2 uv;
-out float ao_value;
+out float shading;
 
 
 const float ao_values[4] = float[4](
@@ -40,6 +40,12 @@ const int uv_indices[12] = int[12](
 
 const int texture_indices[6] = int[6](
 	0, 2, 1, 1, 1, 1
+);
+
+const float face_shading[6] = float[6](
+	1.0, 0.5,
+	0.5, 0.8,
+	0.5, 0.8
 );
 
 
@@ -75,6 +81,6 @@ void main() {
 
 	f_voxel_id = voxel_id;
 	uv = uv_coords[uv_indices[gl_VertexID % 6 + 6 * orientation]];
-	ao_value = ao_values[ao_id];
+	shading = ao_values[ao_id] * face_shading[face_id];
 	gl_Position = m_proj * m_view * m_model * vec4(x, y, z, 1.0);
 }

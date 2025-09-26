@@ -37,7 +37,7 @@ def get_index(x, y, z):
 
 @njit
 def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
-    voxel_id = 7
+    voxel_id = 0
     if voxels[get_index(x, y, z)] != 0:
         return
 
@@ -72,25 +72,20 @@ def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
 
 @njit
 def place_tree(voxels, x, y, z, voxel_id):
-    if voxel_id != GRASS:
+    if voxel_id != GRASS or random() > TREE_PROBABILITY:
         return
-    
-    if random() > 0.02:
+
+    if y >= CHUNK_SIZE - TREE_HEIGHT:
         return
-    
-    if y + TREE_HEIGHT >= CHUNK_SIZE:
-        return
-    
-    if x + TREE_WIDTH >= CHUNK_SIZE:
+    if x >= CHUNK_SIZE - MAX_TREE_WIDTH or x < MAX_TREE_WIDTH:
         return 
-    
-    if x - TREE_WIDTH < 0:
+    if z >= CHUNK_SIZE - MAX_TREE_WIDTH or z < MAX_TREE_WIDTH:
         return
 
     for i in range(1, 4):
         voxels[get_index(x,y+i,z)] = WOOD
     
-    for xt in range(x-TREE_WIDTH, x + TREE_WIDTH):
-        for zt in range(z-TREE_WIDTH, z+TREE_WIDTH):
-            for yt in range(y+4, y+TREE_HEIGHT):
+    for yt in range(y+4, y+TREE_HEIGHT):
+        for xt in range(x-MIN_TREE_WIDTH-TREE_WIDTH_RANGE*random(),x+MIN_TREE_WIDTH+TREE_WIDTH_RANGE*random()):
+            for zt in range(z-MIN_TREE_WIDTH-TREE_WIDTH_RANGE*random(),z+MIN_TREE_WIDTH+TREE_WIDTH_RANGE*random()):
                 voxels[get_index(xt,yt,zt)] = LEAVES
