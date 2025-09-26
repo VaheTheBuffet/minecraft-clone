@@ -9,8 +9,7 @@ class Clouds:
     
 
     def update(self):
-        #self.mesh.program['time'].write(self.app.time)
-        pass
+        self.mesh.program['time'] = self.app.time
     
 
     def render(self):

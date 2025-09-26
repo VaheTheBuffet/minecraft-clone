@@ -33,6 +33,7 @@ class ShaderProgram:
         self.chunk['bg_color'].write(BG_COLOR)
 
         self.clouds['m_proj'].write(self.player.m_proj)
+        self.clouds['center_xz'].write(glm.vec2(WORLD_CENTER_XZ, WORLD_CENTER_XZ))
 
 
     def update(self):
