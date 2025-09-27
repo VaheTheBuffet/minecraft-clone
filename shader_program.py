@@ -17,6 +17,9 @@ class ShaderProgram:
         self.texture_array_0 = self.load_texture('tex_array_0.png', True)
         self.texture_array_0.use(location = 1)
 
+        self.texture_water = self.load_texture('water.png', False)
+        self.texture_water.use(location=1)
+
         self.clouds = self.get_program(shader_name='clouds')
 
 

@@ -21,11 +21,11 @@ void main() {
 	float fog_dist = gl_FragCoord.z / gl_FragCoord.w;
 
 	vec3 tex_color = texture(texture_array_0, vec3(face_uv, f_voxel_id)).rgb;
-	pow(tex_color, gamma);
+	tex_color = pow(tex_color, gamma);
 
 	tex_color.rgb *= shading;
-	tex_color = mix(tex_color, bg_color, (1.0-exp2(-0.000015 * fog_dist * fog_dist)));
+	tex_color = mix(tex_color, bg_color, (1.0-exp2(-0.00001 * fog_dist * fog_dist)));
 	
-	pow(tex_color, inv_gamma);
-	fragColor = vec4(tex_color, 1);
+	tex_color = pow(tex_color, inv_gamma);
+	fragColor = vec4(tex_color, 1.0);
 }

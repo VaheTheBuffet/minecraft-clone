@@ -2,6 +2,7 @@ from settings import *
 from numba import uint8, uint32
 from numba import njit #pyright: ignore
 
+
 @njit
 def compress_data(x:int, y:int, z:int, voxel_id:int, face_id:int, ao_id:int, orientation:int)->uint32: #pyright: ignore because this is not a class
     compressed_data = x
@@ -53,8 +54,28 @@ def get_ao(local_position:tuple, world_position, world_voxels:np.ndarray, normal
 
 
 @njit
-def get_chunk_index(world_position:tuple)->int:
-    wx, wy, wz = world_position
+def world_index(*global_position:int):
+    x, y, z = global_position
+    cidx = get_chunk_index(*global_position)
+    lx, ly, lz = x % CHUNK_SIZE, y % CHUNK_SIZE, z % CHUNK_SIZE
+    vidx = get_voxel_index(lx, ly, lz)
+
+    return cidx, vidx
+
+
+@njit
+def get_voxel_index(*local_position:int):
+    x, y, z = local_position
+
+    if not(0 <= x < CHUNK_SIZE and 0 <= y < CHUNK_SIZE and 0 <= z < CHUNK_SIZE):
+        return -1
+    
+    return x + CHUNK_SIZE * z + CHUNK_AREA * y
+
+
+@njit
+def get_chunk_index(*global_position:int)->int:
+    wx, wy, wz = global_position
 
     cx = wx // CHUNK_SIZE
     cy = wy // CHUNK_SIZE
@@ -69,7 +90,7 @@ def get_chunk_index(world_position:tuple)->int:
 @njit
 def is_empty(local_position:tuple, world_position:tuple, world_voxels:np.ndarray)->bool:
 
-    chunk_index = get_chunk_index(world_position)
+    chunk_index = get_chunk_index(*world_position)
     if chunk_index == -1:
         return False
 
@@ -78,7 +99,7 @@ def is_empty(local_position:tuple, world_position:tuple, world_voxels:np.ndarray
     y = y % CHUNK_SIZE
     z = z % CHUNK_SIZE
     
-    return world_voxels[chunk_index][x + CHUNK_SIZE * z + CHUNK_AREA * y] == 0
+    return world_voxels[chunk_index][x + CHUNK_SIZE * z + CHUNK_AREA * y] == EMPTY
 
 
 @njit
@@ -102,7 +123,7 @@ def build_chunk_mesh(chunk_voxels:np.ndarray, format_size:int, chunk_position:tu
 
                 voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
 
-                if voxel_id == 0:
+                if voxel_id == EMPTY or WATER:
                     continue
     
                 wx = cx * CHUNK_SIZE + x
@@ -188,3 +209,52 @@ def build_chunk_mesh(chunk_voxels:np.ndarray, format_size:int, chunk_position:tu
                         index = add_data(vertex_data, index, v1, v2, v3, v1, v3, v0)
 
     return vertex_data[:index+1]
+
+
+@njit
+def build_water_mesh(world):
+    width = WORLD_W * CHUNK_SIZE
+    depth = WORLD_D * CHUNK_SIZE
+    y = WATER_LEVEL
+
+    mesh = np.empty(WORLD_AREA * CHUNK_AREA * 3 * 3, dtype = 'uint16')
+    mesh_index = 0
+    visited = set()
+
+    for x in range(width):
+        for z in range(depth):
+            idx = x+width*z
+            if world.voxels[idx] != WATER or idx in visited:
+                continue
+
+            xf = x + 1
+            xf_idx = idx
+            min_z = z + 1000
+            zf = z + 1
+            while xf < width and xf_idx not in visited and world.voxels[xf_idx] == WATER:
+                zf = z
+                zf_idx = idx
+
+                while zf < depth and zf_idx not in visited and world.voxels[zf_idx] == WATER:
+                    zf += 1
+                    zf_idx += width
+
+                min_z = min(min_z, zf)
+                xf += 1
+                xf_idx += 1
+            
+            for vx in range(x, xf):
+                for vz in range(z, zf):
+                    visited.add(vx + width * vz)
+            
+            p0 = (x , y, zf)
+            p1 = (xf, y, zf)
+            p2 = (xf, y, z )
+            p3 = (x , y, z )
+
+            for p in (p1, p0, p3, p3, p2, p1):
+                for attr in p:
+                    mesh[mesh_index] = attr
+                    mesh_index += 1
+
+    return mesh[:mesh_index]

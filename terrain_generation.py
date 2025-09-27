@@ -44,7 +44,6 @@ def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
     if world_height - 5 < wy < world_height - 1:
         voxel_id = DIRT
     elif wy <= world_height - 5:
-
         #cave
         if (noise3(wx * 0.1, wy * 0.1, wz * 0.1) > 0 and
                 noise2(wx * 0.1, wz * 0.1) * 3 + 3 < wy < world_height -10):
@@ -53,7 +52,7 @@ def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
             voxel_id = STONE
     else:
         rng = int(7 * random())
-        ry = wy #- rng
+        ry = wy - rng
 
         if SNOW_LEVEL <= ry <world_height:
             voxel_id = SNOW
@@ -68,6 +67,9 @@ def set_voxel_id(voxels, x, y, z, wx, wy, wz, world_height):
 
     if wy < STONE_LEVEL:
         place_tree(voxels, x, y, z, voxel_id)
+    
+    if wy < WATER_LEVEL:
+        generate_water_body(voxels, x, y, z, voxel_id)
 
 
 @njit
@@ -89,3 +91,14 @@ def place_tree(voxels, x, y, z, voxel_id):
         for xt in range(x-MIN_TREE_WIDTH-TREE_WIDTH_RANGE*random(),x+MIN_TREE_WIDTH+TREE_WIDTH_RANGE*random()):
             for zt in range(z-MIN_TREE_WIDTH-TREE_WIDTH_RANGE*random(),z+MIN_TREE_WIDTH+TREE_WIDTH_RANGE*random()):
                 voxels[get_index(xt,yt,zt)] = LEAVES
+
+
+@njit
+def generate_water_body(voxels, x, y, z, voxel_id):
+    if voxel_id != SAND:
+        return
+    try:
+        voxels[get_index(x,WATER_LEVEL,z)] = LEAVES
+    except Exception as e:
+        print(e)
+        pass
