@@ -99,6 +99,5 @@ def generate_water_body(voxels, x, y, z, voxel_id):
         return
     try:
         voxels[get_index(x,WATER_LEVEL,z)] = LEAVES
-    except Exception as e:
-        print(e)
+    except Exception:
         pass

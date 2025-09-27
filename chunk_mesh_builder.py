@@ -211,8 +211,8 @@ def build_chunk_mesh(chunk_voxels:np.ndarray, format_size:int, chunk_position:tu
     return vertex_data[:index+1]
 
 
-@njit
-def build_water_mesh(world):
+#@njit
+def build_water_mesh(world_voxels):
     width = WORLD_W * CHUNK_SIZE
     depth = WORLD_D * CHUNK_SIZE
     y = WATER_LEVEL
@@ -223,25 +223,25 @@ def build_water_mesh(world):
 
     for x in range(width):
         for z in range(depth):
-            idx = x+width*z
-            if world.voxels[idx] != WATER or idx in visited:
+            idx = world_index(x, WATER_LEVEL, z)
+            if world_voxels[idx] != WATER or idx in visited:
                 continue
 
             xf = x + 1
             xf_idx = idx
             min_z = z + 1000
             zf = z + 1
-            while xf < width and xf_idx not in visited and world.voxels[xf_idx] == WATER:
+            while xf < width and xf_idx not in visited and world_voxels[xf_idx] == WATER:
                 zf = z
                 zf_idx = idx
 
-                while zf < depth and zf_idx not in visited and world.voxels[zf_idx] == WATER:
+                while zf < depth and zf_idx not in visited and world_voxels[zf_idx] == WATER:
+                    zf_idx = world_index(xf, y, zf)
                     zf += 1
-                    zf_idx += width
 
                 min_z = min(min_z, zf)
+                xf_idx = world_index(xf, y, zf)
                 xf += 1
-                xf_idx += 1
             
             for vx in range(x, xf):
                 for vz in range(z, zf):
@@ -257,4 +257,5 @@ def build_water_mesh(world):
                     mesh[mesh_index] = attr
                     mesh_index += 1
 
+    print(mesh[:15])
     return mesh[:mesh_index]

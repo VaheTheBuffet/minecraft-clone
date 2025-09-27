@@ -7,9 +7,11 @@ class ShaderProgram:
         self.app = app
         self.ctx = app.ctx
         self.player = app.player
+
         self.chunk = self.get_program(shader_name='chunk')
         self.voxel_marker = self.get_program(shader_name='cube')
         self.crosshair = self.get_program(shader_name = 'crosshair')
+        self.water = self.get_program(shader_name = 'water')
 
         self.texture_0 = self.load_texture('frame.png', False)
         self.texture_0.use(location = 0)
@@ -18,7 +20,7 @@ class ShaderProgram:
         self.texture_array_0.use(location = 1)
 
         self.texture_water = self.load_texture('water.png', False)
-        self.texture_water.use(location=1)
+        self.texture_water.use(location = 2)
 
         self.clouds = self.get_program(shader_name='clouds')
 
@@ -37,12 +39,16 @@ class ShaderProgram:
 
         self.clouds['m_proj'].write(self.player.m_proj)
         self.clouds['center_xz'].write(glm.vec2(WORLD_CENTER_XZ, WORLD_CENTER_XZ))
+        
+        self.water['m_proj'].write(self.player.m_proj)
+        self.water['texture_water'] = 2
 
 
     def update(self):
         self.chunk['m_view'].write(self.player.m_view)
         self.voxel_marker['m_view'].write(self.player.m_view)
         self.clouds['m_view'].write(self.player.m_view)
+        self.water['m_view'].write(self.player.m_view)
 
 
     def load_texture(self, filename:str, is_array:bool):

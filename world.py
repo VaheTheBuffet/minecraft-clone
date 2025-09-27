@@ -1,6 +1,8 @@
 from settings import *
 from world_objects.chunk import Chunk
 from ray_caster import RayCaster
+from chunk_mesh_builder import build_water_mesh
+from world_objects.water import Water
 
 class World:
 
@@ -10,6 +12,7 @@ class World:
         self.voxels = np.empty([WORLD_VOL, CHUNK_VOL], dtype = 'uint8')
         self.app.ray_caster = RayCaster(self)
         self.ray_caster = self.app.ray_caster
+        self.water = Water(self)
 
         self.build_chunks()
         self.build_chunk_mesh()
@@ -29,6 +32,7 @@ class World:
     def build_chunk_mesh(self):
         for chunk in self.chunks:
             chunk.build_mesh()
+        self.water.build_mesh()
 
 
     def update(self):
