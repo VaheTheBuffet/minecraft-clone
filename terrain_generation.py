@@ -99,5 +99,7 @@ def generate_water_body(voxels, x, y, z, voxel_id):
         return
     if y >= CHUNK_SIZE - WATER_LEVEL:
         return
-    voxels[get_index(x,WATER_LEVEL,z)] = WATER
+    for yi in range(y+1, WATER_LEVEL + 1):
+        voxels[get_index(x,yi,z)] = WATER
+    #voxels[get_index(x,WATER_LEVEL,z)] = WATER
 

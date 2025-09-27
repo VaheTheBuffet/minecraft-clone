@@ -214,6 +214,7 @@ def build_chunk_mesh(chunk_voxels:np.ndarray, format_size:int, chunk_position:tu
 
 @njit
 def build_water_mesh(world_voxels):
+    """greedy mesher"""
     width = WORLD_W * CHUNK_SIZE
     depth = WORLD_D * CHUNK_SIZE
     y = WATER_LEVEL

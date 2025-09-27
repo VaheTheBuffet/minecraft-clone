@@ -96,7 +96,7 @@ class RayCaster:
         while not (max_x > 1.0 and max_z > 1.0 and max_y > 1.0):
 
             result = self.get_voxel_id(current_voxel_pos)
-            if result[0] != 0:
+            if result[0] != EMPTY and result[0] != WATER:
                 self.voxel_id, self.voxel_index, self.voxel_local_pos, chunk_index = result
                 self.voxel_world_pos = current_voxel_pos
                 self.chunk_index = chunk_index

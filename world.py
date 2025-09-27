@@ -1,7 +1,7 @@
 from settings import *
 from world_objects.chunk import Chunk
 from ray_caster import RayCaster
-from chunk_mesh_builder import build_water_mesh
+from chunk_mesh_builder import build_water_mesh, world_index
 from world_objects.water import Water
 
 class World:
@@ -37,10 +37,13 @@ class World:
 
     def update(self):
         self.ray_caster.update()
+        x, y, z = self.app.player.position
+        x = int(x); y = int(y); z = int(z)
+        voxel_id = self.voxels[world_index(x, y, z)]
+        self.chunks[0].mesh.program['underwater'] = voxel_id == WATER
 
 
     def render(self):
         for chunk in self.chunks:
             chunk.render()
         self.water.render()
-

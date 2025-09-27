@@ -19,7 +19,8 @@ class VoxelMarker:
 
 
     def update(self):
-        if self.ray_caster.voxel_id != 0:
+        voxel_id = self.ray_caster.voxel_id
+        if voxel_id != EMPTY and voxel_id != WATER:
             self.position = self.ray_caster.voxel_world_pos
             self.set_uniforms()
             self.visible = True

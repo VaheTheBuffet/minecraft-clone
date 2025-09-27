@@ -7,11 +7,16 @@ flat in int f_voxel_id;
 
 uniform sampler2DArray texture_array_0;
 uniform vec3 bg_color;
+uniform int underwater;
 
 const vec3 gamma = vec3(2.2);
 const vec3 inv_gamma = 1/gamma;
 
 out vec4 fragColor;
+
+const vec3 water_factor[2] = vec3[2] (
+	vec3(1, 1, 1), vec3(0, 0.3, 1.0)
+);
 
 void main() {
 	vec2 face_uv = uv;
@@ -23,8 +28,9 @@ void main() {
 	vec3 tex_color = texture(texture_array_0, vec3(face_uv, f_voxel_id)).rgb;
 	tex_color = pow(tex_color, gamma);
 
-	tex_color.rgb *= shading;
+	tex_color *= shading;
 	tex_color = mix(tex_color, bg_color, (1.0-exp2(-0.00001 * fog_dist * fog_dist)));
+	tex_color *= water_factor[underwater];
 	
 	tex_color = pow(tex_color, inv_gamma);
 	fragColor = vec4(tex_color, 1.0);
