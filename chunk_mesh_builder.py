@@ -98,8 +98,9 @@ def is_empty(local_position:tuple, world_position:tuple, world_voxels:np.ndarray
     x = x % CHUNK_SIZE
     y = y % CHUNK_SIZE
     z = z % CHUNK_SIZE
-    
-    return world_voxels[chunk_index][x + CHUNK_SIZE * z + CHUNK_AREA * y] == EMPTY
+
+    id = world_voxels[chunk_index][x + CHUNK_SIZE * z + CHUNK_AREA * y]
+    return id == EMPTY or id == WATER
 
 
 @njit
@@ -123,7 +124,7 @@ def build_chunk_mesh(chunk_voxels:np.ndarray, format_size:int, chunk_position:tu
 
                 voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
 
-                if voxel_id == EMPTY or WATER:
+                if voxel_id == EMPTY or voxel_id == WATER:
                     continue
     
                 wx = cx * CHUNK_SIZE + x
@@ -211,7 +212,7 @@ def build_chunk_mesh(chunk_voxels:np.ndarray, format_size:int, chunk_position:tu
     return vertex_data[:index+1]
 
 
-#@njit
+@njit
 def build_water_mesh(world_voxels):
     width = WORLD_W * CHUNK_SIZE
     depth = WORLD_D * CHUNK_SIZE
@@ -227,35 +228,36 @@ def build_water_mesh(world_voxels):
             if world_voxels[idx] != WATER or idx in visited:
                 continue
 
-            xf = x + 1
+            xf = x
             xf_idx = idx
             min_z = z + 1000
-            zf = z + 1
+            zf = z
+
             while xf < width and xf_idx not in visited and world_voxels[xf_idx] == WATER:
                 zf = z
-                zf_idx = idx
+                zf_idx = world_index(xf, y, z)
 
                 while zf < depth and zf_idx not in visited and world_voxels[zf_idx] == WATER:
-                    zf_idx = world_index(xf, y, zf)
                     zf += 1
+                    zf_idx = world_index(xf, y, zf)
 
                 min_z = min(min_z, zf)
-                xf_idx = world_index(xf, y, zf)
                 xf += 1
+                xf_idx = world_index(xf, y, z)
             
             for vx in range(x, xf):
-                for vz in range(z, zf):
-                    visited.add(vx + width * vz)
+                for vz in range(z, min_z):
+                    visited.add(world_index(vx, y, vz))
             
-            p0 = (x , y, zf)
-            p1 = (xf, y, zf)
-            p2 = (xf, y, z )
-            p3 = (x , y, z )
+            p0 = (x , y+1, min_z)
+            p1 = (xf, y+1, min_z)
+            p2 = (xf, y+1, z )
+            p3 = (x , y+1, z )
 
-            for p in (p1, p0, p3, p3, p2, p1):
+            for p in (p0, p1, p2, p2, p3, p0):
                 for attr in p:
                     mesh[mesh_index] = attr
                     mesh_index += 1
 
     print(mesh[:15])
-    return mesh[:mesh_index]
+    return mesh

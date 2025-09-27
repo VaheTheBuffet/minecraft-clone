@@ -22,7 +22,7 @@ class VoxelEngine:
         self.ctx.gc_mode = 'auto'
         self.ctx.enable(flags=mgl.DEPTH_TEST | mgl.CULL_FACE | mgl.BLEND)
 
-        self.ctx.wireframe = True
+        #self.ctx.wireframe = True
 
         print(self.ctx.viewport)
 

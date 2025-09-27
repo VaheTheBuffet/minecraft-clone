@@ -1,7 +1,7 @@
 from noise import noise2, noise3
 from random import random
 from settings import *
-from numba import njit
+from numba import njit #pyright: ignore
 
 
 @njit
@@ -97,7 +97,7 @@ def place_tree(voxels, x, y, z, voxel_id):
 def generate_water_body(voxels, x, y, z, voxel_id):
     if voxel_id != SAND:
         return
-    try:
-        voxels[get_index(x,WATER_LEVEL,z)] = LEAVES
-    except Exception:
-        pass
+    if y >= CHUNK_SIZE - WATER_LEVEL:
+        return
+    voxels[get_index(x,WATER_LEVEL,z)] = WATER
+

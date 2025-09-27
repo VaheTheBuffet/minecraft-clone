@@ -34,3 +34,4 @@ class VoxelMarker:
 
     def log_data(self):
         print(f'voxel marker position {self.position}')
+        print(f'voxel id {self.ray_caster.voxel_id}')

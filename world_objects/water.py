@@ -9,3 +9,9 @@ class Water:
 
     def build_mesh(self):
         self.mesh = WaterMesh(self)
+
+
+    def render(self):
+        self.app.ctx.disable(mgl.CULL_FACE)
+        self.mesh.render()
+        self.app.ctx.enable(mgl.CULL_FACE)
