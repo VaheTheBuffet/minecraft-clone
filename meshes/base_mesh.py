@@ -1,4 +1,5 @@
 import numpy as np
+import moderngl as mgl
 
 class BaseMesh:
     __slots__ = ['ctx', 'program', 'vbo_format', 'attrs', 'vao']
@@ -11,8 +12,8 @@ class BaseMesh:
 
         vbo = self.ctx.buffer(vertex_data)
         self.vao = self.ctx.vertex_array(
-            self.program, [(vbo, self.vbo_format, *self.attrs)], skip_errors = True
+            self.program, [(vbo, self.vbo_format, *self.attrs)], skip_errors = False
         )
 
     def render(self):
-        self.vao.render()
+        self.vao.render(mgl.TRIANGLES)

@@ -3,6 +3,7 @@ from world import World
 from world_objects.voxel_marker import VoxelMarker
 from world_objects.crosshair import Crosshair
 from world_objects.clouds import Clouds
+from meshes.quad_mesh import QuadMesh
 
 class Scene:
     def __init__(self, app):
@@ -11,6 +12,8 @@ class Scene:
         self.voxel_marker = VoxelMarker(app)
         self.crosshair = Crosshair(app)
         self.clouds = Clouds(app)
+
+        self.quad = QuadMesh(app)
 
 
     def update(self):
@@ -24,6 +27,8 @@ class Scene:
         self.world.render()
         self.crosshair.render()
         self.clouds.render()
+
+        #self.quad.render()
     
 
     def log_data(self):

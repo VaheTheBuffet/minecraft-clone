@@ -34,4 +34,5 @@ void main() {
 	
 	tex_color = pow(tex_color, inv_gamma);
 	fragColor = vec4(tex_color, 1.0);
+	//fragColor = vec4(1,1,1, 1.0);
 }

@@ -24,6 +24,8 @@ class ShaderProgram:
 
         self.clouds = self.get_program(shader_name='clouds')
 
+        self.quad = self.get_program(shader_name='quad')
+
 
         self.set_uniforms_on_init()
 
@@ -43,12 +45,16 @@ class ShaderProgram:
         self.water['m_proj'].write(self.player.m_proj)
         self.water['texture_water'] = 2
 
+        self.quad['m_proj'].write(self.player.m_proj)
+        self.quad['m_model'].write(glm.mat4())
+
 
     def update(self):
         self.chunk['m_view'].write(self.player.m_view)
         self.voxel_marker['m_view'].write(self.player.m_view)
         self.clouds['m_view'].write(self.player.m_view)
         self.water['m_view'].write(self.player.m_view)
+        self.quad['m_view'].write(self.player.m_view)
 
 
     def load_texture(self, filename:str, is_array:bool):

@@ -1,19 +1,20 @@
 #version 330 core
 
-layout (location = 0) in uint compressed_data;
+layout (location = 0) in ivec3 in_position;
 
+layout (std140) uniform InstanceData {
+	uint data[(32u * 32u * 16u)];
+};
 
 uniform mat4 m_proj;
 uniform mat4 m_view;
 uniform mat4 m_model;
-
 
 int x, y, z;
 int voxel_id;
 int face_id;
 int ao_id;
 int orientation;
-
 
 flat out int texture_index;
 flat out int f_voxel_id;
@@ -33,7 +34,7 @@ const vec2 uv_coords[4] = vec2[4](
 
 
 const int uv_indices[12] = int[12](
-	3, 0, 1, 3, 1, 2,
+	2, 3, 0, 0, 1, 2,
 	2, 3, 0, 2, 0, 1
 );
 
@@ -74,13 +75,26 @@ void unpack(uint compressed_data) {
 }
 
 
+vec3 rotation[6] = vec3[6](
+	in_position,
+    vec3(in_position.x, 1-in_position.y, 1-in_position.z),
+	vec3(in_position.y, 1-in_position.z, 1-in_position.x),
+	vec3(1-in_position.y, 1-in_position.z, in_position.x),
+	vec3(in_position.x, 1-in_position.z, in_position.y),
+	vec3(1-in_position.x, 1-in_position.z, 1-in_position.y)
+);
+
+
 void main() {
-	unpack(compressed_data);
+	uint i_d = data[gl_InstanceID];
+	unpack(i_d);
 	
 	texture_index = texture_indices[face_id];
-
 	f_voxel_id = voxel_id;
-	uv = uv_coords[uv_indices[gl_VertexID % 6 + 6 * orientation]];
 	shading = ao_values[ao_id] * face_shading[face_id];
-	gl_Position = m_proj * m_view * m_model * vec4(x, y, z, 1.0);
+	uv = uv_coords[uv_indices[gl_VertexID]];
+
+	vec3 rotated_position = rotation[face_id];
+	vec3 translated_position = vec3(x, y, z) + rotated_position;
+	gl_Position = m_proj * m_view * m_model * vec4(translated_position, 1);
 }
