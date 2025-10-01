@@ -44,6 +44,7 @@ class ShaderProgram:
         
         self.water['m_proj'].write(self.player.m_proj)
         self.water['texture_water'] = 2
+        self.water['bg_color'].write(BG_COLOR)
 
         self.quad['m_proj'].write(self.player.m_proj)
         self.quad['m_model'].write(glm.mat4())

@@ -17,12 +17,13 @@ def get_height(x, y):
     if noise2(x/10, y/10) < 0:
         a1 /= 1.07
 
+    #height += 1.055**(noise2(x*f1, y*f1) * a1 + a1)
     height += noise2(x*f1, y*f1) * a1 + a1
     height += noise2(x*f2, y*f2) * a2 - a2
     height += noise2(x*f4, y*f4) * a4 + a4
     height += noise2(x*f8, y*f8) * a8 - a8
 
-    island_mask = 1 / (math.hypot(x-WORLD_CENTER_XZ, y-WORLD_CENTER_XZ)/250 + 0.0001) ** 20
+    island_mask = 1 / (math.hypot(x-WORLD_CENTER_XZ, y-WORLD_CENTER_XZ)/WORLD_VOL + 1/WORLD_VOL) ** 20
     island_mask = min(island_mask, 1)
 
     height = max(height, 1)
@@ -101,5 +102,3 @@ def generate_water_body(voxels, x, y, z, voxel_id):
         return
     for yi in range(y+1, WATER_LEVEL + 1):
         voxels[get_index(x,yi,z)] = WATER
-    #voxels[get_index(x,WATER_LEVEL,z)] = WATER
-

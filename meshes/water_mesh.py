@@ -8,7 +8,7 @@ class WaterMesh(BaseMesh):
         self.app = water.app
         self.ctx = self.app.ctx
         self.program = self.app.shader_program.water
-        self.vbo_format = '3u2'
+        self.vbo_format = '3u4'
         self.attrs = ['in_position',]
 
         self.get_vao()

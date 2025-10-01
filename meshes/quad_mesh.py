@@ -37,8 +37,6 @@ class QuadMesh(BaseMesh):
 
         self.buf = self.ctx.buffer(data=face_id)
 
-        print(self.program['FaceIdBuffer'].size)
-        print(vertex_data)
         return vertex_data
     
 

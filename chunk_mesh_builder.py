@@ -132,78 +132,79 @@ def build_chunk_mesh(chunk_voxels:np.ndarray, chunk_position:tuple, world_voxels
                 wz = cz * CHUNK_SIZE + z
 
                 if is_empty((x, y+1, z), (wx, wy+1, wz), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 0, 0, 0)
+                    instance_data[index] = compress_data(x, y, z, voxel_id, 0, 1, 0)
                     index += 1
 
                 if is_empty((x, y-1, z), (wx, wy-1, wz), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 1, 0, 0)
+                    instance_data[index] = compress_data(x, y, z, voxel_id, 1, 1, 0)
                     index += 1
                     
                 if is_empty((x+1, y, z), (wx+1, wy, wz), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 2, 0, 0)
+                    instance_data[index] = compress_data(x, y, z, voxel_id, 2, 1, 0)
                     index += 1
 
                 if is_empty((x-1, y, z), (wx-1, wy, wz), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 3, 0, 0)
+                    instance_data[index] = compress_data(x, y, z, voxel_id, 3, 1, 0)
                     index += 1 
 
                 if is_empty((x, y, z+1), (wx, wy, wz+1), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 4, 0, 0)
+                    instance_data[index] = compress_data(x, y, z, voxel_id, 4, 1, 0)
                     index += 1
 
                 if is_empty((x, y, z-1), (wx, wy, wz-1), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 5, 0, 0)
+                    instance_data[index] = compress_data(x, y, z, voxel_id, 5, 1, 0)
                     index += 1
 
     return instance_data[:index]
 
 
-@njit
+#@njit
 def build_water_mesh(world_voxels):
     """greedy mesher"""
     width = WORLD_W * CHUNK_SIZE
     depth = WORLD_D * CHUNK_SIZE
+
     y = WATER_LEVEL
 
-    mesh = np.empty(WORLD_AREA * CHUNK_AREA * 3 * 3, dtype = 'uint16')
+    mesh = np.empty(WORLD_AREA * CHUNK_AREA * 3 * 3, dtype = 'uint32')
     mesh_index = 0
     visited = set()
 
     for x in range(width):
         for z in range(depth):
-            idx = world_index(x, WATER_LEVEL, z)
+            idx = world_index(x, y, z)
             if world_voxels[idx] != WATER or idx in visited:
                 continue
 
-            xf = x
-            xf_idx = idx
-            min_z = z + 1000
-            zf = z
-
-            while xf < width and xf_idx not in visited and world_voxels[xf_idx] == WATER:
-                zf = z
-                zf_idx = world_index(xf, y, z)
-
-                while zf < depth and zf_idx not in visited and world_voxels[zf_idx] == WATER:
-                    zf += 1
-                    zf_idx = world_index(xf, y, zf)
-
-                min_z = min(min_z, zf)
-                xf += 1
-                xf_idx = world_index(xf, y, z)
+            max_x = x
+            max_x_idx = idx
+            while max_x < width and max_x_idx not in visited and world_voxels[max_x_idx] == WATER:
+                max_x += 1
+                max_x_idx = world_index(max_x, y, z)
             
-            for vx in range(x, xf):
+            min_z = z + 1
+            failed = False
+            while min_z < width and not failed:
+                for x_probe in range(x, max_x):
+                    x_probe_idx = world_index(x_probe, y, min_z)
+                    if world_voxels[x_probe_idx] != WATER or x_probe_idx in visited:
+                        failed = True
+                        break
+                if not failed:
+                    min_z += 1
+            
+            for vx in range(x, max_x):
                 for vz in range(z, min_z):
                     visited.add(world_index(vx, y, vz))
             
-            p0 = (x , y+1, min_z)
-            p1 = (xf, y+1, min_z)
-            p2 = (xf, y+1, z )
-            p3 = (x , y+1, z )
+            p0 = (x    , y+1, min_z)
+            p1 = (max_x, y+1, min_z)
+            p2 = (max_x, y+1, z    )
+            p3 = (x    , y+1, z    )
 
             for p in (p0, p1, p2, p2, p3, p0):
                 for attr in p:
                     mesh[mesh_index] = attr
                     mesh_index += 1
 
-    return mesh
+    return mesh[:mesh_index]

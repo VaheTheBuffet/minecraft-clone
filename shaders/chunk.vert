@@ -3,7 +3,7 @@
 layout (location = 0) in ivec3 in_position;
 
 layout (std140) uniform InstanceData {
-	uint data[(32u * 32u * 16u)];
+	ivec4 data[(32u * 32u * 4u)];
 };
 
 uniform mat4 m_proj;
@@ -43,6 +43,7 @@ const int texture_indices[6] = int[6](
 	0, 2, 1, 1, 1, 1
 );
 
+
 const float face_shading[6] = float[6](
 	1.0, 0.5,
 	0.5, 0.8,
@@ -53,6 +54,11 @@ const float face_shading[6] = float[6](
 vec3 color_generator(float id) {
 	return fract(id * vec3(0.222, 0.512, 0.125));
 }
+
+
+uint get_instance_data(int id) {
+	return uint(data[id >> 2][id & 3]);
+} 
 
 
 void unpack(uint compressed_data) {
@@ -86,8 +92,7 @@ vec3 rotation[6] = vec3[6](
 
 
 void main() {
-	uint i_d = data[gl_InstanceID];
-	unpack(i_d);
+	unpack(get_instance_data(gl_InstanceID));
 	
 	texture_index = texture_indices[face_id];
 	f_voxel_id = voxel_id;

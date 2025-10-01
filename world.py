@@ -1,7 +1,7 @@
 from settings import *
 from world_objects.chunk import Chunk
 from ray_caster import RayCaster
-from chunk_mesh_builder import build_water_mesh, world_index
+from chunk_mesh_builder import world_index
 from world_objects.water import Water
 
 class World:

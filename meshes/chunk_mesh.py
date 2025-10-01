@@ -32,16 +32,7 @@ class ChunkMesh(BaseMesh):
         self.data_length = len(i_d)
         if self.data_length == 0:
             return
-        final_data = np.empty(self.data_length * 4, dtype='uint32')
-        index = 0
-        for datum in i_d:
-            final_data[index] = datum
-            index +=1
-            for _ in range(3):
-                final_data[index] = 0
-                index += 1
-
-        self.buf = self.ctx.buffer(data = final_data)
+        self.buf = self.ctx.buffer(data = i_d)
     
 
     def render(self):
