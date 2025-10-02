@@ -2,8 +2,8 @@ import numba
 import numpy as np
 import pygame as pg
 import moderngl as mgl
-import glm
 import math
+from pyglm import glm
 
 #RESOLUTION
 WIN_RES = glm.vec2(1600, 900)
@@ -17,7 +17,8 @@ NUM_SAMPLES = 1  # antialiasing
 MAX_RAY_DISTANCE = 8
 
 #CHUNK
-CHUNK_SIZE = 48
+CHUNK_SIZE = 32
+P_CHUNK_SIZE = CHUNK_SIZE + 2
 H_CHUNK_SIZE = CHUNK_SIZE // 2
 CHUNK_AREA = CHUNK_SIZE * CHUNK_SIZE
 CHUNK_VOL = CHUNK_AREA * CHUNK_SIZE

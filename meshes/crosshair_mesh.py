@@ -35,6 +35,6 @@ class CrosshairMesh(BaseMesh):
             for attr in p[i]:
                 vertex_data[idx] = attr
                 idx += 1
-            vertex_data[idx] = -0.1
+            vertex_data[idx] = 0.1
             idx += 1
         return vertex_data

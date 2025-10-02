@@ -1,7 +1,7 @@
 from settings import *
 from meshes.chunk_mesh import ChunkMesh
-import glm
 from terrain_generation import *
+from time import perf_counter
 
 class Chunk:
     __slots__ = ['voxels', 'mesh', 'app', 'position', 'is_empty', 'world', 'center']
@@ -15,9 +15,19 @@ class Chunk:
         self.center = (glm.vec3(position) + 0.5) * CHUNK_SIZE
 
     
+    @njit
+    def get_voxel(self, x:int, y:int, z:int)->np.uint8 | int:
+        if 0 <= x < CHUNK_SIZE and 0 <= y < CHUNK_SIZE and 0 <= z < CHUNK_SIZE:
+            return self.voxels[x+z*CHUNK_SIZE+y*CHUNK_AREA]
+
+        cx = x + x // 32; cy = y + y // 32; cz = z + z // 32
+        lx = x % 32; ly = y % 32; lz = z % 32
+        return self.world.get_voxel((cx, cy, cz), (lx, ly, lz))
+
+
     def set_uniforms(self):
         self.mesh.program['m_model'].write(
-            glm.translate(glm.mat4(), glm.vec3(self.position) * CHUNK_SIZE) #pyright: ignore
+            glm.translate(glm.mat4(), glm.vec3(self.position) * CHUNK_SIZE)
         )
 
 

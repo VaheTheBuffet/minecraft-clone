@@ -1,5 +1,6 @@
 from settings import *
 from numba import njit 
+from world_objects.chunk import Chunk
 
 
 @njit
@@ -130,67 +131,65 @@ def add_data(vertex_data:np.ndarray, index:int, *vertices:tuple)->int:
     return index
 
 
-@njit
-def build_chunk_mask(chunk_voxels:np.ndarray)->tuple[np.ndarray,...]:
+#@njit
+def build_chunk_mask(chunk:Chunk)->tuple[np.ndarray,...]:
     """through axis is a byte with solid faces 1 transparent empty 0"""
     faces_xy = np.zeros(CHUNK_AREA, dtype='uint32')
     faces_yz = np.zeros(CHUNK_AREA, dtype='uint32')
     faces_zx = np.zeros(CHUNK_AREA, dtype='uint32')
 
-    for x in range(CHUNK_SIZE):
-        for y in range(CHUNK_SIZE):
-            for z in range(CHUNK_SIZE):
-                voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
+    for x in range(-1, CHUNK_SIZE + 1):
+        for y in range(-1, CHUNK_SIZE + 1):
+            for z in range(-1, CHUNK_SIZE + 1):
+                voxel_id = chunk.get_voxel(x, y, z)
                 if voxel_id != EMPTY and voxel_id != WATER:
-                    faces_xy[x + y * CHUNK_SIZE] |= 1 << z
-                    faces_yz[y + z * CHUNK_SIZE] |= 1 << x
-                    faces_zx[z + x * CHUNK_SIZE] |= 1 << y
+                    faces_xy[x + y * P_CHUNK_SIZE] |= 1 << z
+                    faces_yz[y + z * P_CHUNK_SIZE] |= 1 << x
+                    faces_zx[z + x * P_CHUNK_SIZE] |= 1 << y
     
 
     return faces_xy, faces_yz, faces_zx
 
 
+def cull_mask(mask:np.ndarray, axis:int)->np.ndarray:
+    res = np.empty(CHUNK_AREA, dtype = 'uint32')
+    for j in range(CHUNK_SIZE):
+        for k in range(CHUNK_SIZE):
+            if axis == 1:
+                culled_val = mask[j+CHUNK_SIZE*k] & (mask[j+CHUNK_SIZE*k] << 1)
+            else:
+                culled_val = mask[j+CHUNK_SIZE*k] & (mask[j+CHUNK_SIZE*k] >> 1)
+            res[j + CHUNK_SIZE * k] = culled_val
+    return res
+
+
 @njit
-def build_chunk_mesh(chunk_voxels:np.ndarray, chunk_position:tuple, world_voxels:np.ndarray)->np.ndarray:
+def reorder(i, j, k, axis):
+    return i, j, k
+
+
+@njit
+def build_chunk_mesh(chunk:Chunk)->np.ndarray:
     instance_data = np.empty(H_CHUNK_VOL, dtype='uint32')
-    cx, cy, cz = chunk_position
     index = 0
 
-    for x in range(CHUNK_SIZE):
-        for y in range(CHUNK_SIZE):
-            for z in range(CHUNK_SIZE):
-                voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
+    mask_xy, mask_yz, mask_zx = build_chunk_mask(chunk)
+    culled_mask_xyp, culled_mask_xyn = cull_mask(mask_xy, 1), cull_mask(mask_xy, -1)
+    culled_mask_yzp, culled_mask_yzn = cull_mask(mask_yz, 1), cull_mask(mask_xy, -1)
+    culled_mask_zxp, culled_mask_zxn = cull_mask(mask_zx, 1), cull_mask(mask_xy, -1)
 
-                if voxel_id == WATER or voxel_id == EMPTY:
-                    continue
-    
-                wx = cx * CHUNK_SIZE + x
-                wy = cy * CHUNK_SIZE + y
-                wz = cz * CHUNK_SIZE + z
+    masks = (culled_mask_xyp, culled_mask_xyn, culled_mask_yzp, culled_mask_yzn,
+             culled_mask_zxp, culled_mask_zxn)
 
-                if is_empty((x, y+1, z), (wx, wy+1, wz), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 0, 1, 0)
-                    index += 1
+    for axis in range(6):
+        for i in range(CHUNK_SIZE):
+            for j in range(CHUNK_SIZE):
+                for k in range(CHUNK_SIZE):
+                    pos = reorder(i, j, k, axis)
+                    if chunk.get_voxel(*pos) != WATER or chunk.get_voxel(*pos) != EMPTY:
+                        instance_data[index] = compress_data(*pos, int(chunk.get_voxel(*pos)),axis,1,0)
 
-                if is_empty((x, y-1, z), (wx, wy-1, wz), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 1, 1, 0)
-                    index += 1
-                    
-                if is_empty((x+1, y, z), (wx+1, wy, wz), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 2, 1, 0)
-                    index += 1
 
-                if is_empty((x-1, y, z), (wx-1, wy, wz), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 3, 1, 0)
-                    index += 1 
-
-                if is_empty((x, y, z+1), (wx, wy, wz+1), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 4, 1, 0)
-                    index += 1
-
-                if is_empty((x, y, z-1), (wx, wy, wz-1), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 5, 1, 0)
-                    index += 1
 
     return instance_data[:index]
 

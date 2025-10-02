@@ -3,6 +3,7 @@ from world_objects.chunk import Chunk
 from ray_caster import RayCaster
 from chunk_mesh_builder import world_index
 from world_objects.water import Water
+from numba import njit
 
 class World:
 
@@ -27,6 +28,16 @@ class World:
                     self.chunks[chunk_index] = chunk
                     self.voxels[chunk_index] = chunk.build_voxels()
                     chunk.voxels = self.voxels[chunk_index]
+    
+
+    @njit
+    def get_voxel(self, cx:int, cy:int, cz:int, lx:int, ly:int, lz:int)->np.uint8 | int:
+        if 0 <= cx < WORLD_W and 0 <= cz < WORLD_W and 0 <= cy < WORLD_H:
+            cidx = cx + cz * WORLD_W + cy * WORLD_AREA 
+            lidx = lx + lz * CHUNK_SIZE + ly * CHUNK_AREA
+            return self.voxels[cidx, lidx]
+
+        return -1
 
 
     def build_chunk_mesh(self):
