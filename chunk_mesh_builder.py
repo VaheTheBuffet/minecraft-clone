@@ -1,10 +1,9 @@
 from settings import *
-from numba import uint8, uint32
-from numba import njit #pyright: ignore
+from numba import njit 
 
 
 @njit
-def compress_data(x:int, y:int, z:int, voxel_id:int, face_id:int, ao_id:int, orientation:int)->uint32: #pyright: ignore because this is not a class
+def compress_data(x:int, y:int, z:int, voxel_id:int, face_id:int, ao_id:int, orientation:int)->np.uint32:
     compressed_data = x
     compressed_data = (compressed_data << 6) | y
     compressed_data = (compressed_data << 6) | z
@@ -12,11 +11,11 @@ def compress_data(x:int, y:int, z:int, voxel_id:int, face_id:int, ao_id:int, ori
     compressed_data = (compressed_data << 3) | face_id
     compressed_data = (compressed_data << 2) | ao_id
     compressed_data = (compressed_data << 1) | orientation
-    return uint32(compressed_data)
+    return np.uint32(compressed_data)
 
 
 @njit
-def get_ao(local_position:tuple, world_position, world_voxels:np.ndarray, normal:str)->tuple:
+def get_ao(local_position:tuple, world_position, world_voxels:np.ndarray, normal:str)->tuple[int,...]:
     x, y, z = local_position
     wx, wy, wz = world_position
 
@@ -54,7 +53,7 @@ def get_ao(local_position:tuple, world_position, world_voxels:np.ndarray, normal
 
 
 @njit
-def world_index(*global_position:int):
+def world_index(*global_position:int)->tuple[int,int]:
     x, y, z = global_position
     cidx = get_chunk_index(*global_position)
     lx, ly, lz = x % CHUNK_SIZE, y % CHUNK_SIZE, z % CHUNK_SIZE
@@ -64,7 +63,7 @@ def world_index(*global_position:int):
 
 
 @njit
-def get_voxel_index(*local_position:int):
+def get_voxel_index(*local_position:int)->int:
     x, y, z = local_position
 
     if not(0 <= x < CHUNK_SIZE and 0 <= y < CHUNK_SIZE and 0 <= z < CHUNK_SIZE):
@@ -132,19 +131,37 @@ def add_data(vertex_data:np.ndarray, index:int, *vertices:tuple)->int:
 
 
 @njit
+def build_chunk_mask(chunk_voxels:np.ndarray)->tuple[np.ndarray,...]:
+    """through axis is a byte with solid faces 1 transparent empty 0"""
+    faces_xy = np.zeros(CHUNK_AREA, dtype='uint32')
+    faces_yz = np.zeros(CHUNK_AREA, dtype='uint32')
+    faces_zx = np.zeros(CHUNK_AREA, dtype='uint32')
+
+    for x in range(CHUNK_SIZE):
+        for y in range(CHUNK_SIZE):
+            for z in range(CHUNK_SIZE):
+                voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
+                if voxel_id != EMPTY and voxel_id != WATER:
+                    faces_xy[x + y * CHUNK_SIZE] |= 1 << z
+                    faces_yz[y + z * CHUNK_SIZE] |= 1 << x
+                    faces_zx[z + x * CHUNK_SIZE] |= 1 << y
+    
+
+    return faces_xy, faces_yz, faces_zx
+
+
+@njit
 def build_chunk_mesh(chunk_voxels:np.ndarray, chunk_position:tuple, world_voxels:np.ndarray)->np.ndarray:
     instance_data = np.empty(H_CHUNK_VOL, dtype='uint32')
-    visited = np.empty(CHUNK_VOL, dtype='uint8')
     cx, cy, cz = chunk_position
     index = 0
 
     for x in range(CHUNK_SIZE):
         for y in range(CHUNK_SIZE):
             for z in range(CHUNK_SIZE):
-
                 voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
 
-                if voxel_id == EMPTY or voxel_id == WATER:
+                if voxel_id == WATER or voxel_id == EMPTY:
                     continue
     
                 wx = cx * CHUNK_SIZE + x
