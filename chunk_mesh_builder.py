@@ -104,6 +104,25 @@ def is_empty(local_position:tuple, world_position:tuple, world_voxels:np.ndarray
 
 
 @njit
+def pair(a:int, b:int)->int:
+    return CHUNK_VOL * a + b
+
+
+@njit
+def t0(a:int)->int:
+    """trailing zero bits"""
+    b = ~a & (a-1)
+    return max(int(np.log2(b + 1)), 0)
+
+
+@njit
+def t1(a:int)->int:
+    """trailing one bits"""
+    b = ~a & (a+1)
+    return int(np.log2(b))
+
+
+@njit
 def add_data(vertex_data:np.ndarray, index:int, *vertices:tuple)->int:
     """Adds data to vertex_data array and increments index"""
     for vertex in vertices:
@@ -115,6 +134,7 @@ def add_data(vertex_data:np.ndarray, index:int, *vertices:tuple)->int:
 @njit
 def build_chunk_mesh(chunk_voxels:np.ndarray, chunk_position:tuple, world_voxels:np.ndarray)->np.ndarray:
     instance_data = np.empty(H_CHUNK_VOL, dtype='uint32')
+    visited = np.empty(CHUNK_VOL, dtype='uint8')
     cx, cy, cz = chunk_position
     index = 0
 
@@ -158,8 +178,8 @@ def build_chunk_mesh(chunk_voxels:np.ndarray, chunk_position:tuple, world_voxels
     return instance_data[:index]
 
 
-#@njit
-def build_water_mesh(world_voxels):
+@njit
+def build_water_mesh(world_voxels:np.ndarray)->np.ndarray:
     """greedy mesher"""
     width = WORLD_W * CHUNK_SIZE
     depth = WORLD_D * CHUNK_SIZE
@@ -173,12 +193,12 @@ def build_water_mesh(world_voxels):
     for x in range(width):
         for z in range(depth):
             idx = world_index(x, y, z)
-            if world_voxels[idx] != WATER or idx in visited:
+            if world_voxels[idx] != WATER or pair(*idx) in visited:
                 continue
 
             max_x = x
             max_x_idx = idx
-            while max_x < width and max_x_idx not in visited and world_voxels[max_x_idx] == WATER:
+            while max_x < width and pair(*max_x_idx) not in visited and world_voxels[max_x_idx] == WATER:
                 max_x += 1
                 max_x_idx = world_index(max_x, y, z)
             
@@ -187,7 +207,7 @@ def build_water_mesh(world_voxels):
             while min_z < width and not failed:
                 for x_probe in range(x, max_x):
                     x_probe_idx = world_index(x_probe, y, min_z)
-                    if world_voxels[x_probe_idx] != WATER or x_probe_idx in visited:
+                    if world_voxels[x_probe_idx] != WATER or pair(*x_probe_idx) in visited:
                         failed = True
                         break
                 if not failed:
@@ -195,7 +215,7 @@ def build_water_mesh(world_voxels):
             
             for vx in range(x, max_x):
                 for vz in range(z, min_z):
-                    visited.add(world_index(vx, y, vz))
+                    visited.add(pair(*world_index(vx, y, vz)))
             
             p0 = (x    , y+1, min_z)
             p1 = (max_x, y+1, min_z)
