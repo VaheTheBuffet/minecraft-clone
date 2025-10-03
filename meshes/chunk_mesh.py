@@ -5,7 +5,7 @@ from util import build_chunk_mesh
 
 
 class ChunkMesh(BaseMesh):
-    __slots__ = ['chunk', 'app', 'buf', 'data_length']
+    __slots__ = ['chunk', 'app', 'buf', 'face_indices','i_d']
 
     def __init__(self, chunk:'chunk.Chunk'):
         super().__init__()
@@ -29,14 +29,17 @@ class ChunkMesh(BaseMesh):
 
 
     def set_instance_data(self):
-        i_d = build_chunk_mesh(self.chunk.world.voxels, self.chunk.id)
-        self.data_length = len(i_d)
+        self.i_d, self.face_indices = build_chunk_mesh(self.chunk.world.voxels, self.chunk.id)
 
-        if self.data_length != 0:
-            self.buf = self.ctx.buffer(data = i_d)
-    
 
     def render(self):
-        if self.buf:
-            self.buf.bind_to_uniform_block(self.program['InstanceData'].binding)
-            self.vao.render(mgl.TRIANGLES, instances = self.data_length)
+        cur_idx = 0
+        buf = self.ctx.buffer(reserve=len(self.i_d)*4)
+        for face in range(6):
+            a, b, = self.face_indices[face], self.face_indices[face+1]
+            if self.chunk.visible_faces[face] and a!=b:
+                buf.write(self.i_d[a:b], offset = 4 * cur_idx)
+                cur_idx += (b-a)
+
+        buf.bind_to_uniform_block(self.program['InstanceData'].binding)
+        self.vao.render(mgl.TRIANGLES, instances = cur_idx)

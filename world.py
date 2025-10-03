@@ -52,11 +52,13 @@ class World:
 
 
     def render(self):
-        self.voxel_marker.render()
         for chunk in self.chunks:
             chunk.render()
         self.water.render()
+        self.voxel_marker.render()
     
 
     def log_data(self):
         self.voxel_marker.log_data()
+#        for chunk in self.chunks:
+#            chunk.log_data()

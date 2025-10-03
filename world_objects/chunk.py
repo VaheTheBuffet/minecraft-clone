@@ -13,6 +13,7 @@ class Chunk:
         self.app = w.app
         self.is_empty = True
         self.voxels:np.ndarray | None = None
+        self.visible_faces = np.empty(6, dtype='uint8')
 
         self.center = (glm.vec3(position) + 0.5) * CHUNK_SIZE
 
@@ -37,6 +38,13 @@ class Chunk:
 
     def render(self):
         if not self.is_empty and self.is_in_view():
+            delta = self.app.player.position - self.center
+            self.visible_faces[0] = (delta.y > -H_CHUNK_SIZE)
+            self.visible_faces[1] = (delta.y < H_CHUNK_SIZE)
+            self.visible_faces[2] = (delta.x > -H_CHUNK_SIZE)
+            self.visible_faces[3] = (delta.x < H_CHUNK_SIZE)
+            self.visible_faces[4] = (delta.z > -H_CHUNK_SIZE)
+            self.visible_faces[5] = (delta.z < H_CHUNK_SIZE)
             self.set_uniforms()
             self.mesh.render()
 
@@ -49,6 +57,10 @@ class Chunk:
         self.is_empty = not np.any(voxels)
 
         return voxels
+    
+
+    def log_data(self)->None:
+        print(self.visible_faces)
 
 
 @njit

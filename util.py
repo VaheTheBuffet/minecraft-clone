@@ -1,7 +1,6 @@
 from settings import *
 from numba import njit 
 from typing import Any
-import world_objects.chunk as chunk
 
 
 @njit
@@ -105,25 +104,6 @@ def is_empty(local_position:tuple, world_position:tuple, world_voxels:np.ndarray
 
 
 @njit
-def pair(a:int, b:int)->int:
-    return CHUNK_VOL * a + b
-
-
-@njit
-def t0(a:int | Any)->int:
-    """trailing zero bits"""
-    b = ~a & (a-1)
-    return max(int(np.log2(b + 1)), 0)
-
-
-@njit
-def t1(a:int | Any)->int:
-    """trailing one bits"""
-    b = ~a & (a+1)
-    return int(np.log2(b))
-
-
-@njit
 def add_data(vertex_data:np.ndarray, index:int, *vertices:tuple)->int:
     """Adds data to vertex_data array and increments index"""
     for vertex in vertices:
@@ -146,6 +126,38 @@ def get_voxel_from_chunk(lx:int, ly:int, lz:int, world_voxels:np.ndarray, chunk_
 
 
 @njit
+def pair(a:int, b:int)->int:
+    return CHUNK_VOL * a + b
+
+
+@njit
+def t0(a:int | Any)->int:
+    """trailing zero bits"""
+    b = ~a & (a-1)
+    return max(int(np.log2(b + 1)), 0)
+
+
+@njit
+def t1(a:int | Any)->int:
+    """trailing one bits"""
+    b = ~a & (a+1)
+    return int(np.log2(b))
+
+
+@njit
+def cull_row(row:int, axis:int)->int:
+    if axis == 1:
+        return row & ~(row >> 1)
+
+    return row & ~(row << 1)
+
+
+@njit
+def reorder(i, j, k, axis)->tuple[int,int,int]:
+    return [(i,k,j), (k,j,i), (j,i,k)][axis]
+    
+
+@njit
 def build_chunk_mask(world_voxels:np.ndarray, chunk_idx:int)->tuple[np.ndarray,...]:
     """generates a padded chunk mask which includes outer border"""
     faces_xz = np.zeros(P_CHUNK_AREA, dtype='uint64')
@@ -166,54 +178,32 @@ def build_chunk_mask(world_voxels:np.ndarray, chunk_idx:int)->tuple[np.ndarray,.
 
 
 @njit
-def cull_row(row:int, axis:int)->int:
-    if axis == 1:
-        return row & ~(row >> 1)
-
-    return row & ~(row << 1)
-
-
-@njit
-def reorder(i, j, k, axis)->tuple[int,int,int]:
-    return [(i,k,j), (k,j,i), (j,i,k)][axis]
-    
-
-@njit
-def build_chunk_mesh(voxels:np.ndarray, chunk_idx:int)->np.ndarray:
+def build_chunk_mesh(voxels:np.ndarray, chunk_idx:int)->tuple[np.ndarray,np.ndarray]:
     instance_data = np.empty(H_CHUNK_VOL, dtype='uint32')
+    indices = np.zeros(7,dtype='uint32')
     index = 0
 
     mask_xz, mask_zy, mask_yx = build_chunk_mask(voxels, chunk_idx)
     masks = (mask_xz, mask_zy, mask_yx)
 
-    for axis in range(3):
+    for axis in range(6):
         for i in range(CHUNK_SIZE):
             for j in range(CHUNK_SIZE):
-                row = masks[axis][i+1 + (j+1)*P_CHUNK_SIZE]
-                cullp = (cull_row(row, 1) >> 1) & 0xFFFFFFFF
-                culln = (cull_row(row,-1) >> 1) & 0xFFFFFFFF
-
+                row = masks[axis>>1][i+1 + (j+1)*P_CHUNK_SIZE]
+                cullr = (cull_row(row, (axis+1)&1) >> 1) & 0xFFFFFFFF
                 k = -1
-                while cullp > 0:
-                    stride = t0(cullp)
+                while cullr > 0:
+                    stride = t0(cullr)
                     k += stride + 1
 
-                    pos = reorder(i, j, k, axis)
-                    instance_data[index] = compress_data(*pos, get_voxel_from_chunk(*pos, voxels, chunk_idx), 2*axis, 1, 1)
+                    pos = reorder(i, j, k, axis>>1)
+                    instance_data[index] = compress_data(*pos, get_voxel_from_chunk(*pos, voxels, chunk_idx), axis, 1, 1)
                     index += 1
-                    cullp >>= stride + 1
-                
-                k = -1
-                while culln > 0:
-                    stride = t0(culln)
-                    k += stride + 1
+                    cullr >>= stride + 1
 
-                    pos = reorder(i, j, k, axis)
-                    instance_data[index] = compress_data(*pos, get_voxel_from_chunk(*pos, voxels, chunk_idx), 2*axis+1, 1, 1)
-                    index += 1
-                    culln >>= stride + 1
-                
-    return instance_data[:index]
+        indices[axis+1] = index
+
+    return instance_data[:index], indices
 
 
 @njit

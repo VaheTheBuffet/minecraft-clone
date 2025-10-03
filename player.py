@@ -5,8 +5,9 @@ from settings import *
 
 class Player(Camera):
     def __init__(self, app, position=PLAYER_POS, yaw=-90, pitch=0):
-        self.app = app
         super().__init__(position, yaw, pitch)
+        self.visible_axes = []
+        self.app = app
 
 
     def update(self):
@@ -16,8 +17,8 @@ class Player(Camera):
 
 
     def handle_events(self, event):
+        ray_caster = self.app.scene.world.ray_caster
         if event.type == pg.MOUSEBUTTONDOWN:
-            ray_caster = self.app.scene.world.ray_caster
             if event.button == 1: #left click
                 ray_caster.remove_voxel()
             if event.button == 3: #right click

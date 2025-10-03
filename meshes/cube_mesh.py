@@ -51,3 +51,9 @@ class CubeMesh(BaseMesh):
                 uv_index += 1
         
         return vertex_array
+    
+
+    def render(self):
+        #self.app.ctx.disable(mgl.DEPTH_TEST)
+        self.vao.render()
+        self.app.ctx.enable(mgl.DEPTH_TEST)
