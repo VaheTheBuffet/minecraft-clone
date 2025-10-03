@@ -1,11 +1,12 @@
 from settings import *
 from meshes.cube_mesh import CubeMesh
+import world
 
 class VoxelMarker:
-    def __init__(self, app):
-        self.app = app
+    def __init__(self, world:'world.World'):
         self.position = glm.vec3(0,0,-5)
-        self.ray_caster = app.ray_caster
+        self.ray_caster = world.ray_caster
+        self.app = world.app
         self.visible = False
 
         self.mesh = CubeMesh(self)

@@ -1,10 +1,13 @@
-from settings import *
 import moderngl as mgl
 import pygame as pg
-from shader_program import ShaderProgram
-from scene import Scene
-from player import Player
+import shader_program
+import scene
+import player
 import sys
+import sys
+import ray_caster
+from numba.experimental import jitclass
+from settings import *
 
 
 class VoxelEngine:
@@ -17,7 +20,7 @@ class VoxelEngine:
         pg.display.gl_set_attribute(pg.GL_MULTISAMPLESAMPLES, NUM_SAMPLES)
 
 
-        pg.display.set_mode(WIN_RES, flags = pg.OPENGL | pg.DOUBLEBUF) #pyright: ignore
+        pg.display.set_mode(tuple(WIN_RES), flags = pg.OPENGL | pg.DOUBLEBUF)
         self.ctx = mgl.create_context()
         self.ctx.gc_mode = 'auto'
         self.ctx.enable(flags=mgl.DEPTH_TEST | mgl.CULL_FACE | mgl.BLEND)
@@ -38,9 +41,9 @@ class VoxelEngine:
 
 
     def on_init(self):
-        self.player = Player(self)
-        self.shader_program = ShaderProgram(self)
-        self.scene = Scene(self)
+        self.player = player.Player(self)
+        self.shader_program = shader_program.ShaderProgram(self)
+        self.scene = scene.Scene(self)
         
 
     def update(self): 
@@ -54,7 +57,7 @@ class VoxelEngine:
 
 
     def render(self):
-        self.ctx.clear(color=BG_COLOR) #pyright: ignore
+        self.ctx.clear(BG_COLOR.x, BG_COLOR.y, BG_COLOR.z)
         self.scene.render()
         pg.display.flip()
 

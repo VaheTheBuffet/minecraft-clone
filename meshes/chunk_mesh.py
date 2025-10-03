@@ -1,13 +1,13 @@
 from settings import *
 from meshes.base_mesh import BaseMesh
-from chunk_mesh_builder import build_chunk_mesh
-from numba import uint8
+from world_objects import chunk
+from util import build_chunk_mesh
 
 
 class ChunkMesh(BaseMesh):
     __slots__ = ['chunk', 'app', 'buf', 'data_length']
 
-    def __init__(self, chunk):
+    def __init__(self, chunk:'chunk.Chunk'):
         super().__init__()
         self.app = chunk.app
         self.chunk = chunk
@@ -28,7 +28,7 @@ class ChunkMesh(BaseMesh):
 
 
     def set_instance_data(self):
-        i_d = build_chunk_mesh(self.chunk.voxels, self.chunk.position, self.chunk.world.voxels)
+        i_d = build_chunk_mesh(self.chunk.world.voxels, self.chunk.id)
         self.data_length = len(i_d)
         if self.data_length == 0:
             return

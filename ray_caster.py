@@ -1,6 +1,6 @@
 from settings import *
 from glm import length, normalize #pyright: ignore
-from chunk_mesh_builder import is_empty
+from util import is_empty
 from enum import Enum
 
 class RayCaster:
