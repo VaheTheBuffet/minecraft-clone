@@ -41,6 +41,10 @@ class World:
     def update(self):
         self.ray_caster.update()
         self.voxel_marker.update()
+        self.check_underwater()
+
+
+    def check_underwater(self):
         x, y, z = self.app.player.position
         x = int(x); y = int(y); z = int(z)
         voxel_id = self.voxels[world_index(x, y, z)]
@@ -48,9 +52,9 @@ class World:
 
 
     def render(self):
+        self.voxel_marker.render()
         for chunk in self.chunks:
             chunk.render()
-        self.voxel_marker.render()
         self.water.render()
     
 

@@ -19,15 +19,12 @@ class VoxelEngine:
         pg.display.gl_set_attribute(pg.GL_DEPTH_SIZE, DEPTH_SIZE)
         pg.display.gl_set_attribute(pg.GL_MULTISAMPLESAMPLES, NUM_SAMPLES)
 
-
         pg.display.set_mode(tuple(WIN_RES), flags = pg.OPENGL | pg.DOUBLEBUF)
         self.ctx = mgl.create_context()
         self.ctx.gc_mode = 'auto'
         self.ctx.enable(flags=mgl.DEPTH_TEST | mgl.CULL_FACE | mgl.BLEND)
 
         #self.ctx.wireframe = True
-
-        print(self.ctx.viewport)
 
         self.clock  = pg.time.Clock()
         self.delta_time = 0

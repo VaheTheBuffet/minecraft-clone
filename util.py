@@ -134,51 +134,48 @@ def add_data(vertex_data:np.ndarray, index:int, *vertices:tuple)->int:
 
 @njit
 def get_voxel_from_chunk(lx:int, ly:int, lz:int, world_voxels:np.ndarray, chunk_idx:int)->int:
-    chunk_idx += lx // WORLD_W + (lz // WORLD_W) * WORLD_W + (ly // WORLD_W) * WORLD_AREA
-    lx = lx % 32; lz = lz % 32; ly = ly % 32
-    if(0 <= chunk_idx < WORLD_VOL):
-        return world_voxels[chunk_idx, (lx + lz * CHUNK_SIZE + ly * CHUNK_AREA)]
-    return -1
+    cx = chunk_idx % WORLD_W; cz = (chunk_idx // WORLD_W) % WORLD_W; cy = chunk_idx // WORLD_AREA
+    cx += lx // CHUNK_SIZE; cz += lz // CHUNK_SIZE; cy += ly // CHUNK_SIZE
+
+    if(0 <= cx < WORLD_W and 0 <= cz < WORLD_W and 0 <= cy < WORLD_H):
+        lx %= CHUNK_SIZE; lz %= CHUNK_SIZE; ly %= CHUNK_SIZE
+        chunk_idx = cx + cz * WORLD_W + cy * WORLD_AREA
+        return world_voxels[chunk_idx, lx + lz * CHUNK_SIZE + ly * CHUNK_AREA]
+
+    return EMPTY
 
 
 @njit
 def build_chunk_mask(world_voxels:np.ndarray, chunk_idx:int)->tuple[np.ndarray,...]:
-    """through axis is a byte with solid faces 1 transparent empty 0"""
+    """generates a padded chunk mask which includes outer border"""
     faces_xz = np.zeros(P_CHUNK_AREA, dtype='uint64')
     faces_zy = np.zeros(P_CHUNK_AREA, dtype='uint64')
     faces_yx = np.zeros(P_CHUNK_AREA, dtype='uint64')
 
-    for x in range(-1, CHUNK_SIZE + 1):
-        for y in range(-1, CHUNK_SIZE + 1):
-            for z in range(-1, CHUNK_SIZE + 1):
-                voxel_id = get_voxel_from_chunk(x, y, z, world_voxels, chunk_idx)
+    for x in range(P_CHUNK_SIZE):
+        for y in range(P_CHUNK_SIZE):
+            for z in range(P_CHUNK_SIZE):
+                voxel_id = get_voxel_from_chunk(x-1, y-1, z-1, world_voxels, chunk_idx)
                 if voxel_id != EMPTY and voxel_id != WATER:
-                    faces_xz[x + z * P_CHUNK_SIZE] |= 1 << (y + 1)
-                    faces_zy[z + y * P_CHUNK_SIZE] |= 1 << (x + 1)
-                    faces_yx[y + x * P_CHUNK_SIZE] |= 1 << (z + 1)
+                    faces_xz[x + z * P_CHUNK_SIZE] |= (1 << y)
+                    faces_zy[z + y * P_CHUNK_SIZE] |= (1 << x)
+                    faces_yx[y + x * P_CHUNK_SIZE] |= (1 << z)
     
 
     return faces_xz, faces_zy, faces_yx
 
 
 @njit
-def cull_row(mask:np.ndarray, i:int, j:int, axis:int)->int:
-    mask_val = mask[i + CHUNK_SIZE * j]
+def cull_row(row:int, axis:int)->int:
     if axis == 1:
-        return mask_val & ((mask_val ^ (mask_val << 1)) >> 1)
+        return row & ~(row >> 1)
 
-    return mask_val & ((mask_val ^ (mask_val >> 1)) << 1)
+    return row & ~(row << 1)
 
 
 @njit
 def reorder(i, j, k, axis)->tuple[int,int,int]:
-    if axis == 0:
-        return i, j, k
-    
-    if axis == 1:
-        return j, k, i
-    
-    return k, i, j
+    return [(i,k,j), (k,j,i), (j,i,k)][axis]
     
 
 @njit
@@ -192,8 +189,9 @@ def build_chunk_mesh(voxels:np.ndarray, chunk_idx:int)->np.ndarray:
     for axis in range(3):
         for i in range(CHUNK_SIZE):
             for j in range(CHUNK_SIZE):
-                cullp = np.uint32((cull_row(masks[axis], i, j, 1) >> 1) & 0xFFFFFFFF)
-                culln = np.uint32((cull_row(masks[axis], i, j,-1) >> 1) & 0xFFFFFFFF)
+                row = masks[axis][i+1 + (j+1)*P_CHUNK_SIZE]
+                cullp = (cull_row(row, 1) >> 1) & 0xFFFFFFFF
+                culln = (cull_row(row,-1) >> 1) & 0xFFFFFFFF
 
                 k = -1
                 while cullp > 0:
@@ -201,20 +199,20 @@ def build_chunk_mesh(voxels:np.ndarray, chunk_idx:int)->np.ndarray:
                     k += stride + 1
 
                     pos = reorder(i, j, k, axis)
-                    instance_data[index] = compress_data(*pos, get_voxel_from_chunk(*pos, voxels, chunk_idx), axis, 1, 1)
+                    instance_data[index] = compress_data(*pos, get_voxel_from_chunk(*pos, voxels, chunk_idx), 2*axis, 1, 1)
                     index += 1
                     cullp >>= stride + 1
-
+                
                 k = -1
                 while culln > 0:
                     stride = t0(culln)
                     k += stride + 1
 
                     pos = reorder(i, j, k, axis)
-                    instance_data[index] = compress_data(*pos, get_voxel_from_chunk(*pos, voxels, chunk_idx), axis + 1, 1, 1)
+                    instance_data[index] = compress_data(*pos, get_voxel_from_chunk(*pos, voxels, chunk_idx), 2*axis+1, 1, 1)
                     index += 1
-                    culln >>= k
-
+                    culln >>= stride + 1
+                
     return instance_data[:index]
 
 

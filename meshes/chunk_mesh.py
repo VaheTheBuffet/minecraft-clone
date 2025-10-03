@@ -13,6 +13,7 @@ class ChunkMesh(BaseMesh):
         self.chunk = chunk
         self.program = self.app.shader_program.chunk
         self.ctx = self.app.ctx
+        self.buf = None
         self.vbo_format = '3u1'
         self.attrs = ['in_position',]
 
@@ -30,11 +31,12 @@ class ChunkMesh(BaseMesh):
     def set_instance_data(self):
         i_d = build_chunk_mesh(self.chunk.world.voxels, self.chunk.id)
         self.data_length = len(i_d)
-        if self.data_length == 0:
-            return
-        self.buf = self.ctx.buffer(data = i_d)
+
+        if self.data_length != 0:
+            self.buf = self.ctx.buffer(data = i_d)
     
 
     def render(self):
-        self.buf.bind_to_uniform_block(self.program['InstanceData'].binding)
-        self.vao.render(mgl.TRIANGLES, instances = self.data_length)
+        if self.buf:
+            self.buf.bind_to_uniform_block(self.program['InstanceData'].binding)
+            self.vao.render(mgl.TRIANGLES, instances = self.data_length)
