@@ -24,9 +24,6 @@ class ShaderProgram:
 
         self.clouds = self.get_program(shader_name='clouds')
 
-        self.quad = self.get_program(shader_name='quad')
-
-
         self.set_uniforms_on_init()
 
 
@@ -46,16 +43,12 @@ class ShaderProgram:
         self.water['texture_water'] = 2
         self.water['bg_color'].write(BG_COLOR)
 
-        self.quad['m_proj'].write(self.player.m_proj)
-        self.quad['m_model'].write(glm.mat4())
-
 
     def update(self):
         self.chunk['m_view'].write(self.player.m_view)
         self.voxel_marker['m_view'].write(self.player.m_view)
         self.clouds['m_view'].write(self.player.m_view)
         self.water['m_view'].write(self.player.m_view)
-        self.quad['m_view'].write(self.player.m_view)
 
 
     def load_texture(self, filename:str, is_array:bool):
@@ -67,13 +60,13 @@ class ShaderProgram:
             texture = self.ctx.texture_array(
                 size = (pg_texture.get_width(), pg_texture.get_height() // n_layers, n_layers),
                 components = 4,
-                data=pg.image.tostring(pg_texture, 'RGBA', False)
+                data=pg.image.tobytes(pg_texture, 'RGBA', False)
             )
         else:
             texture = self.ctx.texture(
                     size=pg_texture.get_size(),
                     components=4,
-                    data=pg.image.tostring(pg_texture, 'RGBA', False)
+                    data=pg.image.tobytes(pg_texture, 'RGBA', False)
             )
         texture.anisotropy = 16
         texture.build_mipmaps()

@@ -1,5 +1,6 @@
 from settings import *
 from numba import njit 
+from typing import Any
 
 
 @njit
@@ -103,25 +104,6 @@ def is_empty(local_position:tuple, world_position:tuple, world_voxels:np.ndarray
 
 
 @njit
-def pair(a:int, b:int)->int:
-    return CHUNK_VOL * a + b
-
-
-@njit
-def t0(a:int)->int:
-    """trailing zero bits"""
-    b = ~a & (a-1)
-    return max(int(np.log2(b + 1)), 0)
-
-
-@njit
-def t1(a:int)->int:
-    """trailing one bits"""
-    b = ~a & (a+1)
-    return int(np.log2(b))
-
-
-@njit
 def add_data(vertex_data:np.ndarray, index:int, *vertices:tuple)->int:
     """Adds data to vertex_data array and increments index"""
     for vertex in vertices:
@@ -131,68 +113,97 @@ def add_data(vertex_data:np.ndarray, index:int, *vertices:tuple)->int:
 
 
 @njit
-def build_chunk_mask(chunk_voxels:np.ndarray)->tuple[np.ndarray,...]:
-    """through axis is a byte with solid faces 1 transparent empty 0"""
-    faces_xy = np.zeros(CHUNK_AREA, dtype='uint32')
-    faces_yz = np.zeros(CHUNK_AREA, dtype='uint32')
-    faces_zx = np.zeros(CHUNK_AREA, dtype='uint32')
+def get_voxel_from_chunk(lx:int, ly:int, lz:int, world_voxels:np.ndarray, chunk_idx:int)->int:
+    cx = chunk_idx % WORLD_W; cz = (chunk_idx // WORLD_W) % WORLD_W; cy = chunk_idx // WORLD_AREA
+    cx += lx // CHUNK_SIZE; cz += lz // CHUNK_SIZE; cy += ly // CHUNK_SIZE
 
-    for x in range(CHUNK_SIZE):
-        for y in range(CHUNK_SIZE):
-            for z in range(CHUNK_SIZE):
-                voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
-                if voxel_id != EMPTY and voxel_id != WATER:
-                    faces_xy[x + y * CHUNK_SIZE] |= 1 << z
-                    faces_yz[y + z * CHUNK_SIZE] |= 1 << x
-                    faces_zx[z + x * CHUNK_SIZE] |= 1 << y
-    
+    if(0 <= cx < WORLD_W and 0 <= cz < WORLD_W and 0 <= cy < WORLD_H):
+        lx %= CHUNK_SIZE; lz %= CHUNK_SIZE; ly %= CHUNK_SIZE
+        chunk_idx = cx + cz * WORLD_W + cy * WORLD_AREA
+        return world_voxels[chunk_idx, lx + lz * CHUNK_SIZE + ly * CHUNK_AREA]
 
-    return faces_xy, faces_yz, faces_zx
+    return EMPTY
 
 
 @njit
-def build_chunk_mesh(chunk_voxels:np.ndarray, chunk_position:tuple, world_voxels:np.ndarray)->np.ndarray:
+def pair(a:int, b:int)->int:
+    return CHUNK_VOL * a + b
+
+
+@njit
+def t0(a:int | Any)->int:
+    """trailing zero bits"""
+    b = ~a & (a-1)
+    return max(int(np.log2(b + 1)), 0)
+
+
+@njit
+def t1(a:int | Any)->int:
+    """trailing one bits"""
+    b = ~a & (a+1)
+    return int(np.log2(b))
+
+
+@njit
+def cull_row(row:int, axis:int)->int:
+    if axis == 1:
+        return row & ~(row >> 1)
+
+    return row & ~(row << 1)
+
+
+@njit
+def reorder(i, j, k, axis)->tuple[int,int,int]:
+    return [(i,k,j), (k,j,i), (j,i,k)][axis]
+    
+
+@njit
+def build_chunk_mask(world_voxels:np.ndarray, chunk_idx:int)->tuple[np.ndarray,...]:
+    """generates a padded chunk mask which includes outer border"""
+    faces_xz = np.zeros(P_CHUNK_AREA, dtype='uint64')
+    faces_zy = np.zeros(P_CHUNK_AREA, dtype='uint64')
+    faces_yx = np.zeros(P_CHUNK_AREA, dtype='uint64')
+
+    for x in range(P_CHUNK_SIZE):
+        for y in range(P_CHUNK_SIZE):
+            for z in range(P_CHUNK_SIZE):
+                voxel_id = get_voxel_from_chunk(x-1, y-1, z-1, world_voxels, chunk_idx)
+                if voxel_id != EMPTY and voxel_id != WATER:
+                    faces_xz[x + z * P_CHUNK_SIZE] |= (1 << y)
+                    faces_zy[z + y * P_CHUNK_SIZE] |= (1 << x)
+                    faces_yx[y + x * P_CHUNK_SIZE] |= (1 << z)
+    
+
+    return faces_xz, faces_zy, faces_yx
+
+
+@njit
+def build_chunk_mesh(voxels:np.ndarray, chunk_idx:int)->tuple[np.ndarray,np.ndarray]:
     instance_data = np.empty(H_CHUNK_VOL, dtype='uint32')
-    cx, cy, cz = chunk_position
+    indices = np.zeros(7,dtype='uint32')
     index = 0
 
-    for x in range(CHUNK_SIZE):
-        for y in range(CHUNK_SIZE):
-            for z in range(CHUNK_SIZE):
-                voxel_id = chunk_voxels[x + CHUNK_SIZE * z + CHUNK_AREA * y]
+    mask_xz, mask_zy, mask_yx = build_chunk_mask(voxels, chunk_idx)
+    masks = (mask_xz, mask_zy, mask_yx)
 
-                if voxel_id == WATER or voxel_id == EMPTY:
-                    continue
-    
-                wx = cx * CHUNK_SIZE + x
-                wy = cy * CHUNK_SIZE + y
-                wz = cz * CHUNK_SIZE + z
+    for axis in range(6):
+        for i in range(CHUNK_SIZE):
+            for j in range(CHUNK_SIZE):
+                row = masks[axis>>1][i+1 + (j+1)*P_CHUNK_SIZE]
+                cullr = (cull_row(row, (axis+1)&1) >> 1) & 0xFFFFFFFF
+                k = -1
+                while cullr > 0:
+                    stride = t0(cullr)
+                    k += stride + 1
 
-                if is_empty((x, y+1, z), (wx, wy+1, wz), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 0, 1, 0)
+                    pos = reorder(i, j, k, axis>>1)
+                    instance_data[index] = compress_data(*pos, get_voxel_from_chunk(*pos, voxels, chunk_idx), axis, 1, 1)
                     index += 1
+                    cullr >>= stride + 1
 
-                if is_empty((x, y-1, z), (wx, wy-1, wz), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 1, 1, 0)
-                    index += 1
-                    
-                if is_empty((x+1, y, z), (wx+1, wy, wz), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 2, 1, 0)
-                    index += 1
+        indices[axis+1] = index
 
-                if is_empty((x-1, y, z), (wx-1, wy, wz), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 3, 1, 0)
-                    index += 1 
-
-                if is_empty((x, y, z+1), (wx, wy, wz+1), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 4, 1, 0)
-                    index += 1
-
-                if is_empty((x, y, z-1), (wx, wy, wz-1), world_voxels):
-                    instance_data[index] = compress_data(x, y, z, voxel_id, 5, 1, 0)
-                    index += 1
-
-    return instance_data[:index]
+    return instance_data[:index], indices
 
 
 @njit

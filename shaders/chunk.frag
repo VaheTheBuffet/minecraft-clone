@@ -55,5 +55,6 @@ void main() {
 	
 	tex_color = pow(tex_color, inv_gamma);
 	fragColor = vec4(tex_color, 1.0);
-	//fragColor = vec4(1,1,1, 1.0);
+//	fragColor = fract(vec4((f_face_id+1) * 5.33, (f_face_id+1) * 9.25, (f_face_id+1) * 4.121, 0));
+//	fragColor.a = 1.0;
 }

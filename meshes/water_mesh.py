@@ -1,6 +1,6 @@
 from settings import *
 from meshes.base_mesh import BaseMesh
-from chunk_mesh_builder import build_water_mesh
+from util import build_water_mesh
 
 class WaterMesh(BaseMesh):
     def __init__(self, water):

@@ -1,17 +1,20 @@
 from settings import *
 from world_objects.chunk import Chunk
 from ray_caster import RayCaster
-from chunk_mesh_builder import world_index
+from util import world_index
 from world_objects.water import Water
+from numba import njit
+import world_objects.voxel_marker as voxel_marker
+import main
+
 
 class World:
-
-    def __init__(self, app):
+    def __init__(self, app:'main.VoxelEngine'):
         self.app = app
         self.chunks = np.empty([WORLD_VOL], dtype = 'object')
         self.voxels = np.empty([WORLD_VOL, CHUNK_VOL], dtype = 'uint8')
-        self.app.ray_caster = RayCaster(self)
-        self.ray_caster = self.app.ray_caster
+        self.ray_caster = RayCaster(self)
+        self.voxel_marker = voxel_marker.VoxelMarker(self)
         self.water = Water(self)
 
         self.build_chunks()
@@ -27,7 +30,7 @@ class World:
                     self.chunks[chunk_index] = chunk
                     self.voxels[chunk_index] = chunk.build_voxels()
                     chunk.voxels = self.voxels[chunk_index]
-
+    
 
     def build_chunk_mesh(self):
         for chunk in self.chunks:
@@ -37,6 +40,11 @@ class World:
 
     def update(self):
         self.ray_caster.update()
+        self.voxel_marker.update()
+        self.check_underwater()
+
+
+    def check_underwater(self):
         x, y, z = self.app.player.position
         x = int(x); y = int(y); z = int(z)
         voxel_id = self.voxels[world_index(x, y, z)]
@@ -47,3 +55,10 @@ class World:
         for chunk in self.chunks:
             chunk.render()
         self.water.render()
+        self.voxel_marker.render()
+    
+
+    def log_data(self):
+        self.voxel_marker.log_data()
+#        for chunk in self.chunks:
+#            chunk.log_data()
