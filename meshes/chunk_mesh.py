@@ -5,7 +5,7 @@ from numba import uint8
 
 
 class ChunkMesh(BaseMesh):
-    __slots__ = ['chunk', 'app', 'buf', 'data_length']
+    __slots__ = ['chunk', 'app', 'buf', 'buf_array', 'data_length']
 
     def __init__(self, chunk):
         super().__init__()
@@ -20,21 +20,26 @@ class ChunkMesh(BaseMesh):
 
 
     def get_vertex_data(self) -> np.ndarray:
-        self.set_instance_data()
         return np.array([
             0,1,1, 1,1,1, 1,1,0, 
             1,1,0, 0,1,0, 0,1,1
         ], dtype='uint8')
 
 
-    def set_instance_data(self):
+    def get_vao(self):
+        vertex_data = self.get_vertex_data()
+        vbo = self.ctx.buffer(vertex_data)
         i_d = build_chunk_mesh(self.chunk.voxels, self.chunk.position, self.chunk.world.voxels)
         self.data_length = len(i_d)
-        if self.data_length == 0:
-            return
-        self.buf = self.ctx.buffer(data = i_d)
-    
+
+        if self.data_length > 0:
+            buf = self.ctx.buffer(data = i_d)
+
+            self.vao = self.ctx.vertex_array(
+                self.program, [(vbo, self.vbo_format, *self.attrs),
+                               (buf, '1u4 /i', 'compressed_data')], skip_errors = False
+            )
+        
 
     def render(self):
-        self.buf.bind_to_uniform_block(self.program['InstanceData'].binding)
         self.vao.render(mgl.TRIANGLES, instances = self.data_length)

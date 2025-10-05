@@ -40,7 +40,7 @@ class World:
         x, y, z = self.app.player.position
         x = int(x); y = int(y); z = int(z)
         voxel_id = self.voxels[world_index(x, y, z)]
-        self.chunks[0].mesh.program['underwater'] = voxel_id == WATER
+        self.chunks[0].mesh.program['underwater'] = 1 if voxel_id == WATER else 0
 
 
     def render(self):

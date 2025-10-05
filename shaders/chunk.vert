@@ -1,10 +1,8 @@
 #version 330 core
 
 layout (location = 0) in ivec3 in_position;
+layout (location = 1) in uint compressed_data;
 
-layout (std140) uniform InstanceData {
-	ivec4 data[(32u * 32u * 4u)];
-};
 
 uniform mat4 m_proj;
 uniform mat4 m_view;
@@ -58,12 +56,7 @@ vec3 color_generator(float id) {
 }
 
 
-uint get_instance_data(int id) {
-	return uint(data[id >> 2][id & 3]);
-} 
-
-
-void unpack(uint compressed_data) {
+void unpack(uint data) {
 	//(x, y, z, voxel_id,  face_id, ao_id, orientation)
 	//(6, 6, 6,        8,        3,     2,           1)
 
@@ -73,13 +66,13 @@ void unpack(uint compressed_data) {
 	const uint mask_voxel_id    = 255u; const uint len_voxel_id     = 8u;
 	const uint mask_position    = 63u;  const uint len_position     = 6u;
 
-	orientation = int(compressed_data & mask_orientation); compressed_data >>= len_orientation;
-	ao_id       = int(compressed_data & mask_ao_id);       compressed_data >>= len_ao_id;
-	face_id     = int(compressed_data & mask_face_id);     compressed_data >>= len_face_id;
-	voxel_id    = int(compressed_data & mask_voxel_id);    compressed_data >>= len_voxel_id;
-	z           = int(compressed_data & mask_position);    compressed_data >>= len_position;
-	y           = int(compressed_data & mask_position);    compressed_data >>= len_position;
-	x           = int(compressed_data & mask_position);    compressed_data >>= len_position;
+	orientation = int(data & mask_orientation); data >>= len_orientation;
+	ao_id       = int(data & mask_ao_id);       data >>= len_ao_id;
+	face_id     = int(data & mask_face_id);     data >>= len_face_id;
+	voxel_id    = int(data & mask_voxel_id);    data >>= len_voxel_id;
+	z           = int(data & mask_position);    data >>= len_position;
+	y           = int(data & mask_position);    data >>= len_position;
+	x           = int(data & mask_position);    data >>= len_position;
 }
 
 
@@ -94,7 +87,7 @@ vec3 rotation[6] = vec3[6](
 
 
 void main() {
-	unpack(get_instance_data(gl_InstanceID));
+	unpack(compressed_data);
 	
 	texture_index = texture_indices[face_id];
 	f_voxel_id = voxel_id;
