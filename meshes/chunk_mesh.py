@@ -30,11 +30,11 @@ class ChunkMesh(BaseMesh):
     def get_vao(self):
         vertex_data = self.get_vertex_data()
         vbo = self.ctx.buffer(vertex_data)
-        i_d = build_chunk_mesh(self.chunk.voxels, self.chunk.position, self.chunk.world.voxels)
-        self.data_length = len(i_d)
+        i_d = build_chunk_mesh(self.chunk.world.voxels, self.chunk.id)
+        self.data_length = len(i_d[0])
 
         if self.data_length > 0:
-            buf = self.ctx.buffer(data = i_d)
+            buf = self.ctx.buffer(data = i_d[0])
 
             self.vao = self.ctx.vertex_array(
                 self.program, [(vbo, self.vbo_format, *self.attrs),
